@@ -1,0 +1,7 @@
+Hello,
+
+We asked you a question about your request "[(${ticketSubject})]" and have not heard back yet.
+
+Please reply to this email with the information we asked for, and we will carry on.
+
+If you no longer need help, you do not need to do anything.

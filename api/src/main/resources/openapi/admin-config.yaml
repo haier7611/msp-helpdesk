@@ -1,0 +1,669 @@
+openapi: 3.1.0
+info:
+  title: Ticket System - admin configuration
+  version: 0.1.0
+  description: |
+    Admin configuration endpoints. Session cookie plus the
+    X-XSRF-TOKEN header on every PUT, POST and DELETE. Admins only: agents and customers get 403.
+    Endpoints marked "step-up" answer 403 `step_up_required` unless the session entered a TOTP or
+    recovery code in the last 10 minutes. Secrets (mailbox passwords, OAuth2 client secrets) are
+    write-only and never returned. Errors are `{"error": code, "message": text}`. Checked against
+    the registered endpoints by AdminConfigOpenApiCoverageIntegrationTest. The request-type default
+    assignee and SLA endpoints are in sla-notifications.yaml.
+servers:
+  - url: /
+tags:
+  - name: admin-request-types
+  - name: admin-email
+  - name: admin-signature
+  - name: admin-audit
+  - name: admin-saved-replies
+  - name: admin-client-emails
+paths:
+  /api/v1/admin/request-types:
+    get:
+      tags: [admin-request-types]
+      summary: Every request type, archived ones last, with ticket counts
+      responses:
+        "200":
+          description: Request types
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: "#/components/schemas/AdminRequestType"}}
+    post:
+      tags: [admin-request-types]
+      summary: Add a request type (unique name; a portal-visible type cannot start at P1)
+      requestBody: &requestTypeBody
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/RequestTypeBody"}
+      responses:
+        "201": &requestType
+          description: The request type
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/AdminRequestType"}
+        "409": {description: "duplicate_name"}
+  /api/v1/admin/request-types/{requestTypeId}:
+    put:
+      tags: [admin-request-types]
+      summary: Rename, describe, set the starting priority, show/hide in the portal, archive
+      parameters: [{name: requestTypeId, in: path, required: true, schema: {type: integer, format: int64}}]
+      requestBody: *requestTypeBody
+      responses:
+        "200": *requestType
+        "409": {description: "duplicate_name, system_type (Alert) or in_use_by_sender_rules"}
+  /api/v1/admin/request-types/order:
+    put:
+      tags: [admin-request-types]
+      summary: Set the display order (every id exactly once)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, properties: {ids: {type: array, items: {type: integer, format: int64}}}}
+      responses:
+        "200":
+          description: Request types in the new order
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: "#/components/schemas/AdminRequestType"}}
+
+  /api/v1/admin/email/mailboxes:
+    get:
+      tags: [admin-email]
+      summary: Mailboxes with poll status (never the secret)
+      responses:
+        "200":
+          description: Mailboxes
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: "#/components/schemas/Mailbox"}}
+    post:
+      tags: [admin-email]
+      summary: Add a mailbox (step-up). The secret is encrypted at rest.
+      requestBody: &mailboxBody
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/MailboxBody"}
+      responses:
+        "201": &mailbox
+          description: The mailbox
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Mailbox"}
+  /api/v1/admin/email/mailboxes/{id}:
+    parameters: [{name: id, in: path, required: true, schema: {type: integer, format: int64}}]
+    get:
+      tags: [admin-email]
+      summary: One mailbox
+      responses:
+        "200": *mailbox
+    put:
+      tags: [admin-email]
+      summary: Edit a mailbox (step-up); a null secret keeps the stored one
+      requestBody: *mailboxBody
+      responses:
+        "200": *mailbox
+    delete:
+      tags: [admin-email]
+      summary: Remove a mailbox (step-up)
+      responses:
+        "204": {description: Removed}
+  /api/v1/admin/email/mailboxes/{id}/test:
+    post:
+      tags: [admin-email]
+      summary: >-
+        Test connection - sign in to IMAP and open the folder; with outgoing settings also sign in to
+        SMTP (connect, TLS, AUTH, QUIT - no message) and record the result as the last
+        sending error; then queue a probe to support+internal@, sent through the mailbox's SMTP when
+        set. A failed SMTP sign-in returns loginOk false and queues nothing.
+      parameters: [{name: id, in: path, required: true, schema: {type: integer, format: int64}}]
+      responses:
+        "200":
+          description: Result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  loginOk: {type: boolean}
+                  error: {type: [string, "null"]}
+                  probeId: {type: [integer, "null"], format: int64}
+                  message: {type: string}
+  /api/v1/admin/email/mailboxes/{id}/test/{probeId}:
+    get:
+      tags: [admin-email]
+      summary: Whether the probe reached support+internal@ (plus-addressing check)
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: integer, format: int64}}
+        - {name: probeId, in: path, required: true, schema: {type: integer, format: int64}}
+      responses:
+        "200":
+          description: Probe status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {arrived: {type: boolean}, expired: {type: boolean}, message: {type: string}}
+  /api/v1/admin/email/settings:
+    get:
+      tags: [admin-email]
+      summary: Supporter email replies setting
+      responses:
+        "200": &replyMode
+          description: Setting
+          content:
+            application/json:
+              schema: {type: object, properties: {supporterReplies: {type: string, enum: [OFF, INTERNAL_ONLY, NOTES_AND_PUBLIC]}}}
+    put:
+      tags: [admin-email]
+      summary: Change the supporter email replies setting (step-up)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, properties: {supporterReplies: {type: string, enum: [OFF, INTERNAL_ONLY, NOTES_AND_PUBLIC]}}}
+      responses:
+        "200": *replyMode
+  /api/v1/admin/email/block-rules:
+    get:
+      tags: [admin-email]
+      summary: Blocked sender addresses and domains
+      responses:
+        "200":
+          description: Block rules
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: "#/components/schemas/BlockRule"}}
+    post:
+      tags: [admin-email]
+      summary: Block a sender or domain. A client domain, saved contact or supporter answers 409 confirmation_required; repeat with confirm true after step-up. The support domain is refused.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind: {type: string, enum: [ADDRESS, DOMAIN]}
+                value: {type: string}
+                confirm: {type: boolean}
+      responses:
+        "201":
+          description: The rule
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/BlockRule"}
+        "409": {description: confirmation_required}
+  /api/v1/admin/email/block-rules/{id}:
+    delete:
+      tags: [admin-email]
+      summary: Remove a block rule
+      parameters: [{name: id, in: path, required: true, schema: {type: integer, format: int64}}]
+      responses:
+        "204": {description: Removed}
+  /api/v1/admin/email/blocked-mail:
+    get:
+      tags: [admin-email]
+      summary: Blocked mail log (30 days; sender, subject, date, rule - no content)
+      responses:
+        "200":
+          description: Blocked mail
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: "#/components/schemas/BlockedMail"}}
+  /api/v1/admin/email/blocked-mail/{id}/restore:
+    post:
+      tags: [admin-email]
+      summary: Restore a blocked mail into a normal ticket (routed as new mail)
+      parameters: [{name: id, in: path, required: true, schema: {type: integer, format: int64}}]
+      responses:
+        "200":
+          description: The new ticket
+          content:
+            application/json:
+              schema: {type: object, properties: {ticketId: {type: integer, format: int64}}}
+  /api/v1/admin/email/sender-rules:
+    get:
+      tags: [admin-email]
+      summary: Sender rules (routing only - never discard)
+      responses:
+        "200":
+          description: Sender rules
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: "#/components/schemas/SenderRule"}}
+    post:
+      tags: [admin-email]
+      summary: Always create the ticket for an organisation as a request type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                kind: {type: string, enum: [ADDRESS, DOMAIN]}
+                value: {type: string}
+                organisationId: {type: integer, format: int64}
+                requestTypeId: {type: integer, format: int64}
+      responses:
+        "201":
+          description: The rule
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/SenderRule"}
+  /api/v1/admin/email/sender-rules/{id}:
+    delete:
+      tags: [admin-email]
+      summary: Remove a sender rule
+      parameters: [{name: id, in: path, required: true, schema: {type: integer, format: int64}}]
+      responses:
+        "204": {description: Removed}
+  /api/v1/admin/email/public-domains:
+    get:
+      tags: [admin-email]
+      summary: The maintained public email domain list (read-only; never a verified domain)
+      responses:
+        "200":
+          description: Domains, sorted
+          content:
+            application/json:
+              schema: {type: array, items: {type: string}}
+
+  /api/v1/admin/saved-replies:
+    get:
+      tags: [admin-saved-replies]
+      summary: Shared saved replies (personal ones are never listed here)
+      responses:
+        "200":
+          description: Shared replies
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: "#/components/schemas/SavedReply"}}
+    post:
+      tags: [admin-saved-replies]
+      summary: Add a shared saved reply (body sanitised like rich text)
+      requestBody: &savedReplyBody
+        required: true
+        content:
+          application/json:
+            schema: {type: object, properties: {title: {type: string, maxLength: 120}, bodyHtml: {type: string, maxLength: 20000}}}
+      responses:
+        "201": &savedReply
+          description: The reply
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/SavedReply"}
+  /api/v1/admin/saved-replies/{id}:
+    parameters: [{name: id, in: path, required: true, schema: {type: integer, format: int64}}]
+    put:
+      tags: [admin-saved-replies]
+      summary: Edit a shared saved reply (404 for a personal one)
+      requestBody: *savedReplyBody
+      responses:
+        "200": *savedReply
+    delete:
+      tags: [admin-saved-replies]
+      summary: Delete a shared saved reply (404 for a personal one)
+      responses:
+        "204": {description: Deleted}
+
+  /api/v1/admin/tickets/{id}/reopen:
+    parameters: [{name: id, in: path, required: true, schema: {type: integer, format: int64}}]
+    post:
+      tags: [admin-tickets]
+      summary: Reopen a closed ticket (admins only, step-up)
+      description: >-
+        Closed -> Open with a required reason (3-500 characters, kept on the agent timeline as
+        "Reopened by <admin>: <reason>", never in the audit log). The SLA resolution clock carries on
+        as for a client reopen. 400 reopen_reason_required; 403 for agents and engineers, or
+        step_up_required without a step-up in the last 10 minutes; 404 for a ticket the admin cannot
+        see; 409 not_closed, or duplicate_cannot_reopen for a ticket merged as a duplicate. Audit
+        event TICKET_REOPENED (ticket and organisation ids).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, required: [reason], properties: {reason: {type: string, minLength: 3, maxLength: 500}}}
+      responses:
+        "200":
+          description: Reopened
+          content:
+            application/json:
+              schema: {type: object, properties: {status: {type: string, enum: [OPEN]}}}
+
+  /api/v1/admin/signature-template:
+    get:
+      tags: [admin-signature]
+      summary: The company signature template
+      responses:
+        "200": &template
+          description: Template
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/SignatureTemplate"}
+    put:
+      tags: [admin-signature]
+      summary: Save the template (step-up)
+      requestBody: &templateBody
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/SignatureTemplateBody"}
+      responses:
+        "200": *template
+  /api/v1/admin/signature-template/preview:
+    post:
+      tags: [admin-signature]
+      summary: Render unsaved template values with a sample supporter (HTML and plain text, full and short)
+      requestBody: *templateBody
+      responses:
+        "200":
+          description: Rendered signature
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fullHtml: {type: string}
+                  fullText: {type: string}
+  /api/v1/admin/signature-template/logo:
+    put:
+      tags: [admin-signature]
+      summary: Upload the logo as the raw body (PNG, JPEG or WebP, up to 2 MB; re-encoded to a PNG under 30 KB) (step-up)
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema: {type: string, format: binary}
+      responses:
+        "200": *template
+        "400": {description: invalid_logo}
+        "413": {description: too_large}
+    delete:
+      tags: [admin-signature]
+      summary: Remove the logo (back to the placeholder) (step-up)
+      responses:
+        "200": *template
+  /api/v1/admin/branding:
+    get:
+      tags: [admin-signature]
+      summary: Support name (From name) and brand colour
+      responses:
+        "200": &branding
+          description: Branding
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Branding"}
+    put:
+      tags: [admin-signature]
+      summary: Save branding (step-up); an empty support name goes back to the server default
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, properties: {supportName: {type: string}, brandColour: {type: string}}}
+      responses:
+        "200": *branding
+
+  /api/v1/admin/organisations/{id}/client-emails:
+    get:
+      tags: [admin-client-emails]
+      summary: The organisation's client email switches; all on by default
+      parameters: &clientEmailOrg [{name: id, in: path, required: true, schema: {type: integer, format: int64}}]
+      responses:
+        "200": &clientEmails
+          description: >-
+            The four switches. Agent public replies and the agent-opened ticket email are never
+            switchable and are not listed. An organisation the admin may not see answers 404.
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/ClientEmailSwitches"}
+    put:
+      tags: [admin-client-emails]
+      summary: >-
+        Turn client emails on or off for the organisation (no step-up; audit-logged as
+        CLIENT_EMAILS_CHANGED when something changed). All four fields are required (400 otherwise).
+        pendingReminder is the same stored switch as the SLA timers' pendingReminderEnabled.
+      parameters: *clientEmailOrg
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/ClientEmailSwitches"}
+      responses:
+        "200": *clientEmails
+
+  /api/v1/admin/audit:
+    get:
+      tags: [admin-audit]
+      summary: Audit log, newest first, 100 per page (one year kept; dates are UTC days)
+      parameters: &auditFilters
+        - {name: from, in: query, schema: {type: string, format: date}}
+        - {name: to, in: query, schema: {type: string, format: date}}
+        - {name: actor, in: query, description: part of the actor's email address, schema: {type: string}}
+        - {name: type, in: query, schema: {type: string}}
+        - {name: organisationId, in: query, schema: {type: integer, format: int64}}
+        - {name: before, in: query, description: continue after this event id, schema: {type: integer, format: int64}}
+      responses:
+        "200":
+          description: A page of events
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  events: {type: array, items: {$ref: "#/components/schemas/AuditEvent"}}
+                  nextBefore: {type: [integer, "null"], format: int64}
+                  from: {type: string, format: date}
+                  to: {type: string, format: date}
+                  types: {type: array, items: {type: string}}
+  /api/v1/admin/audit/csv:
+    get:
+      tags: [admin-audit]
+      summary: The filtered log as CSV (formula-safe cells; the export is audit-logged; over 10,000 rows answers 400 too_many_rows)
+      parameters:
+        - {name: from, in: query, schema: {type: string, format: date}}
+        - {name: to, in: query, schema: {type: string, format: date}}
+        - {name: actor, in: query, schema: {type: string}}
+        - {name: type, in: query, schema: {type: string}}
+        - {name: organisationId, in: query, schema: {type: integer, format: int64}}
+      responses:
+        "200":
+          description: CSV
+          content:
+            text/csv:
+              schema: {type: string}
+
+components:
+  schemas:
+    ClientEmailSwitches:
+      type: object
+      required: [ticketReceived, resolvedNotice, closedNotice, pendingReminder]
+      properties:
+        ticketReceived: {type: boolean, description: the confirmation with the reference (portal, email, follow-ups; API alerts only when opted in)}
+        resolvedNotice: {type: boolean, description: the Resolved notice (an agent's Resolve or the auto-resolve)}
+        closedNotice: {type: boolean, description: the Closed notice after the auto-close (the ticket still closes)}
+        pendingReminder: {type: boolean, description: the Pending-on-client reminder}
+    SavedReply:
+      type: object
+      properties:
+        id: {type: integer, format: int64}
+        title: {type: string}
+        bodyHtml: {type: string}
+        shared: {type: boolean}
+    RequestTypeBody:
+      type: object
+      required: [name, defaultPriority]
+      properties:
+        name: {type: string, maxLength: 100}
+        description: {type: string, maxLength: 200}
+        defaultPriority: {type: string, enum: [P1, P2, P3, P4]}
+        portalVisible: {type: boolean}
+        archived: {type: boolean}
+    AdminRequestType:
+      type: object
+      properties:
+        id: {type: integer, format: int64}
+        name: {type: string}
+        description: {type: string}
+        defaultPriority: {type: string, enum: [P1, P2, P3, P4]}
+        portalVisible: {type: boolean}
+        archived: {type: boolean}
+        sortOrder: {type: integer}
+        defaultAssigneeUserId: {type: [integer, "null"], format: int64}
+        system: {type: boolean, description: the built-in Alert type}
+        ticketCount: {type: integer, format: int64}
+    MailboxBody:
+      type: object
+      properties:
+        name: {type: string}
+        address: {type: string}
+        enabled: {type: boolean}
+        imapHost: {type: string}
+        imapPort: {type: integer}
+        imapSecurity: {type: string, enum: [TLS, STARTTLS, NONE]}
+        imapFolder: {type: string}
+        authType: {type: string, enum: [PASSWORD, OAUTH2]}
+        username: {type: string}
+        secret: {type: [string, "null"], description: write-only; null keeps the stored secret}
+        oauthTenantId: {type: [string, "null"]}
+        oauthTokenUrl: {type: [string, "null"]}
+        oauthClientId: {type: [string, "null"]}
+        oauthScope: {type: [string, "null"]}
+        trustedAuthservIds:
+          type: array
+          items: {type: string}
+          description: >-
+            Authserv-ids of our own receiving server (exact, case-insensitive; "(none)" matches a
+            header without one, as Exchange Online writes). Empty on imap.gmail.com /
+            imap.googlemail.com is saved as ["mx.google.com"], on outlook.office365.com as
+            ["(none)"]; the saved list is returned in the Mailbox. Other servers stay empty.
+        smtpHost:
+          type: [string, "null"]
+          description: >-
+            Outgoing. Empty = mail keeps using the server's mail settings; set =
+            client replies, ticket confirmations, status emails, agent alerts, the probe and account
+            and security mail (invitations, password resets, sign-in links, security notices) go out
+            through this mailbox, From the support address. With several sending mailboxes the
+            enabled one with the lowest id is used.
+        smtpPort: {type: [integer, "null"], description: "default 465 for TLS, 587 for STARTTLS"}
+        smtpSecurity:
+          type: [string, "null"]
+          enum: [TLS, STARTTLS, NONE, null]
+          description: NONE only to this server itself (a local test server), as for IMAP
+        smtpSameSignIn: {type: [boolean, "null"], description: "use the incoming sign-in (default true)"}
+        smtpUsername: {type: [string, "null"], description: required when smtpSameSignIn is false}
+        smtpSecret:
+          type: [string, "null"]
+          description: >-
+            write-only SMTP password for a separate sign-in; null keeps the stored one. Encrypted at
+            rest, never returned or logged.
+    Mailbox:
+      type: object
+      properties:
+        id: {type: integer, format: int64}
+        name: {type: string}
+        address: {type: string}
+        enabled: {type: boolean}
+        imapHost: {type: string}
+        imapPort: {type: integer}
+        imapSecurity: {type: string}
+        imapFolder: {type: string}
+        authType: {type: string}
+        username: {type: string}
+        secretSet: {type: boolean}
+        oauthTokenUrl: {type: [string, "null"]}
+        oauthClientId: {type: [string, "null"]}
+        oauthScope: {type: [string, "null"]}
+        trustedAuthservIds: {type: array, items: {type: string}}
+        lastPollAt: {type: [string, "null"], format: date-time}
+        lastSuccessAt: {type: [string, "null"], format: date-time}
+        lastError: {type: [string, "null"]}
+        consecutiveFailures: {type: integer}
+        nextPollAt: {type: [string, "null"], format: date-time}
+        smtpHost: {type: [string, "null"]}
+        smtpPort: {type: [integer, "null"]}
+        smtpSecurity: {type: [string, "null"]}
+        smtpSameSignIn: {type: boolean}
+        smtpUsername: {type: [string, "null"], description: only for a separate sign-in}
+        smtpSecretSet: {type: boolean, description: a separate SMTP password is stored (never the value)}
+        sending: {type: boolean, description: this mailbox sends ticket mail now}
+        smtpLastError:
+          type: [string, "null"]
+          description: last sending error - a short category ("SMTP authentication failed"), never server text
+    BlockRule:
+      type: object
+      properties:
+        id: {type: integer, format: int64}
+        kind: {type: string, enum: [ADDRESS, DOMAIN]}
+        value: {type: string}
+        createdAt: {type: string, format: date-time}
+    BlockedMail:
+      type: object
+      properties:
+        id: {type: integer, format: int64}
+        fromAddress: {type: string}
+        subject: {type: string}
+        receivedAt: {type: string, format: date-time}
+        ruleKind: {type: string}
+        rule: {type: string}
+        restoredAt: {type: [string, "null"], format: date-time}
+        ticketId: {type: [integer, "null"], format: int64}
+    SenderRule:
+      type: object
+      properties:
+        id: {type: integer, format: int64}
+        kind: {type: string, enum: [ADDRESS, DOMAIN]}
+        value: {type: string}
+        organisationId: {type: integer, format: int64}
+        requestTypeId: {type: integer, format: int64}
+        createdAt: {type: string, format: date-time}
+    SignatureTemplateBody:
+      type: object
+      properties:
+        companyName: {type: string, maxLength: 100}
+        address: {type: string, maxLength: 200}
+        brandColour: {type: string, pattern: "^#[0-9A-Fa-f]{6}$"}
+        emailMode: {type: string, enum: [SUPPORTER, SUPPORT_MAILBOX]}
+        supportEmail: {type: string}
+        logoAlt: {type: string, maxLength: 100}
+        confidentialityLine: {type: string, maxLength: 300}
+    SignatureTemplate:
+      allOf:
+        - {$ref: "#/components/schemas/SignatureTemplateBody"}
+        - type: object
+          properties:
+            logoUploaded: {type: boolean}
+            logoDataUri: {type: string, description: "data:image/png;base64,... (uploaded or placeholder)"}
+            logoWidth: {type: integer}
+            logoHeight: {type: integer}
+    Branding:
+      type: object
+      properties:
+        supportName: {type: string}
+        supportNameCustom: {type: boolean}
+        defaultSupportName: {type: string}
+        brandColour: {type: string}
+        logoUploaded: {type: boolean}
+        logoDataUri: {type: string}
+        logoWidth: {type: integer}
+        logoHeight: {type: integer}
+    AuditEvent:
+      type: object
+      properties:
+        id: {type: integer, format: int64}
+        occurredAt: {type: string, format: date-time}
+        type: {type: string}
+        actorUserId: {type: [integer, "null"], format: int64}
+        actorName: {type: [string, "null"]}
+        actorEmail: {type: [string, "null"]}
+        targetUserId: {type: [integer, "null"], format: int64}
+        targetName: {type: [string, "null"]}
+        targetEmail: {type: [string, "null"]}
+        clientIp: {type: [string, "null"]}
+        details: {type: object, description: allow-listed fields only - show as text}

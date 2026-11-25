@@ -1,0 +1,2 @@
+org.springframework.boot.EnvironmentPostProcessor=\
+com.ticketsystem.api.config.PlaceholderSecretGuard

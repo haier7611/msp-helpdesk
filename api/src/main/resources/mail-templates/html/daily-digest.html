@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{mail-templates/html/layout.html :: layout(~{::title}, ~{::#content})}">
+<head><title th:text="|Your ${supportName} daily digest|">Daily digest</title></head>
+<body>
+<div id="content">
+  <p style="margin:0 0 16px;">Hello <span th:text="${recipientName}">Alex</span>,</p>
+  <p style="margin:0 0 16px;"><span th:text="${summary}">Summary</span></p>
+  <p style="margin:0 0 16px;white-space:pre-line;font-family:Consolas,Menlo,monospace;font-size:14px;" th:text="${items}">Items</p>
+  <p style="margin:0 0 16px;">Open the queue:</p>
+  <p style="margin:0;font-size:13px;line-height:20px;color:#555b62;"><a th:href="${link}" th:text="${link}" href="#" style="color:#2B5797;word-break:break-all;">link</a></p>
+</div>
+</body>
+</html>

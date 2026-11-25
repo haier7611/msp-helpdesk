@@ -1,0 +1,10 @@
+Hello [(${recipientName})],
+
+[(${headline})]
+
+Ticket: [(${ticketSubject})]
+
+Open the ticket:
+[(${link})]
+
+This email is for the support team only. Replies go to the internal mailbox, never to the client.

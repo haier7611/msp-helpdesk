@@ -1,0 +1,168 @@
+# Ticket System stack: api (Spring Boot), web (Caddy + React build), postgres 16.
+# Settings come from .env next to this file (see .env.example; on a server keep it mode 600).
+# Postgres publishes NO host port: only the api reaches it, over the internal network.
+# Local runs: scripts/dev-up.sh (docs/guides/local-development.md). COMPOSE_PROJECT_NAME and
+# TS_CONTAINER_PREFIX in .env give a second copy on the same machine its own names.
+name: ticketsys
+
+# Container logs rotate (json-file, 10 MB x 5 per container) so a chatty api can never fill
+# the host disk; about 14 days of api logs at demo volumes (docs/30-reliability.md).
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
+services:
+  postgres:
+    image: postgres:16.16-alpine3.24@sha256:81e77a4833487b8132fe4b00bedd39dc3f74b8641e387f19312a48f7de218c2e
+    container_name: ${TS_CONTAINER_PREFIX:-ticketsys}-postgres
+    logging: *default-logging
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ticketsys}
+      POSTGRES_USER: ${POSTGRES_USER:-ticketsys}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C.UTF-8"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", 'pg_isready -h 127.0.0.1 -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  api:
+    image: ticketsys-api:${APP_IMAGE_TAG:-local}
+    build:
+      context: ./api
+      args:
+        GIT_SHA: ${GIT_SHA:-unknown}
+    container_name: ${TS_CONTAINER_PREFIX:-ticketsys}-api
+    logging: *default-logging
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ticketsys}
+      # WP-02b (C14): the api runs as the restricted ticketsys_app role (insert/read-only on the
+      # audit log); Flyway migrates as the owner role and sets ticketsys_app's password from
+      # APP_DB_PASSWORD on every start.
+      SPRING_DATASOURCE_USERNAME: ticketsys_app
+      SPRING_DATASOURCE_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
+      SPRING_FLYWAY_USER: ${POSTGRES_USER:-ticketsys}
+      SPRING_FLYWAY_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      ATTACHMENTS_DIR: /data/attachments
+      # Core auth. Links in emails point at TS_PUBLIC_BASE_URL. TS_SECURE_COOKIES=false
+      # only for plain-http local runs (drops the __Host- prefix and the Secure flag).
+      # TS_SETUP_TOKEN (32+ characters) creates the first admin once; empty = setup off.
+      TS_PUBLIC_BASE_URL: ${TS_PUBLIC_BASE_URL:-http://localhost:8080}
+      TS_SECURE_COOKIES: ${TS_SECURE_COOKIES:-true}
+      TS_SETUP_TOKEN: ${TS_SETUP_TOKEN:-}
+      # Key for MFA secrets at rest (64 hex characters); the api refuses to start without
+      # it. TS_DATA_OLD_KEYS only during a key rotation.
+      TS_DATA_KEY: ${TS_DATA_KEY:?set TS_DATA_KEY in .env}
+      TS_DATA_KEY_ID: ${TS_DATA_KEY_ID:-k1}
+      TS_DATA_OLD_KEYS: ${TS_DATA_OLD_KEYS:-}
+      # WP-12 retention (docs/30-reliability.md): true = the nightly run only counts and logs what
+      # it would delete ("retention: dry run" at start). Maps to app.retention.dry-run.
+      APP_RETENTION_DRY_RUN: ${APP_RETENTION_DRY_RUN:-false}
+      # Outbound mail. Empty SMTP_HOST = mail is queued but not sent.
+      # dev/demo profiles: SMTP_HOST=mailpit, SMTP_PORT=1025, SMTP_SECURITY=none (see .env.example).
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-}
+      SMTP_SECURITY: ${SMTP_SECURITY:-starttls}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      MAIL_FROM_ADDRESS: ${MAIL_FROM_ADDRESS:-}
+      MAIL_SUPPORT_NAME: ${MAIL_SUPPORT_NAME:-Ticket System}
+      MAIL_MESSAGE_ID_DOMAIN: ${MAIL_MESSAGE_ID_DOMAIN:-}
+    volumes:
+      # A host path (production: /opt/ticket-system/data/attachments) or, for a local run, the
+      # named volume "attachments" below (.env.local.example), which needs no host chown.
+      - ${ATTACHMENTS_DIR:-./data/attachments}:/data/attachments
+    networks: [backend, frontend]
+    # 2 GB (was 1 GB) for image decoding headroom; the JVM heap follows it
+    # (-XX:MaxRAMPercentage=60 in api/Dockerfile, about 1.2 GB). Plan for about 3 GB on the host in total.
+    mem_limit: 2g
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/actuator/health > /dev/null || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+      start_period: 60s
+
+  web:
+    image: ticketsys-web:${APP_IMAGE_TAG:-local}
+    build:
+      context: ./web
+    container_name: ${TS_CONTAINER_PREFIX:-ticketsys}-web
+    logging: *default-logging
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    # Servers: bind 127.0.0.1 and let only the TLS reverse proxy on the same host connect, so nothing
+    # else can reach Caddy and set X-Forwarded-* (which Caddy and the api trust). On a shared machine
+    # pick a free WEB_PORT.
+    ports:
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-80}:8080"
+    # Caddy reaches Mailpit's UI (mailui) for the basic-auth /mailpit/ route.
+    # MAILPIT_UI_HASH is a bcrypt hash you put in the host .env (caddy hash-password); an
+    # empty or missing value becomes "disabled", which makes /mailpit/ answer 404 (fail closed).
+    environment:
+      MAILPIT_UI_USER: ${MAILPIT_UI_USER:-qa}
+      MAILPIT_UI_HASH: ${MAILPIT_UI_HASH:-disabled}
+    networks: [frontend, mailui]
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Local mail catcher: receives every outbound email so invites and replies can be seen
+  # without a real mailbox. Only with COMPOSE_PROFILES=dev or demo; never in production.
+  # SMTP (1025) is reachable only from the api over the internal backend network. The web UI (8025)
+  # binds 127.0.0.1 - on a server it is NOT behind the reverse proxy (which only forwards to the
+  # web port); view it with an SSH port forward (docs/30-reliability.md). Messages are kept in
+  # memory only, capped, and lost on restart.
+  mailpit:
+    image: axllent/mailpit:v1.33.0@sha256:9b3a463be15354c0f0eba91697d80e3e0d8a5623ef0e627cacc836bc17fd5231
+    container_name: ${TS_CONTAINER_PREFIX:-ticketsys}-mailpit
+    logging: *default-logging
+    profiles: [dev, demo]
+    restart: unless-stopped
+    environment:
+      MP_MAX_MESSAGES: "500"
+      MP_SMTP_DISABLE_RDNS: "true"
+      # Served under /mailpit/ behind Caddy's basic-auth route (web/Caddyfile).
+      # The port on 127.0.0.1 below stays for the SSH-forward way of reading it; with the webroot
+      # set, that way is http://127.0.0.1:8025/mailpit/.
+      MP_WEBROOT: /mailpit
+    ports:
+      - "${MAILPIT_UI_BIND:-127.0.0.1}:${MAILPIT_UI_PORT:-8025}:8025"
+    networks: [backend, mailui]
+    mem_limit: 128m
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+networks:
+  backend:
+    internal: true
+  frontend: {}
+  # Mailpit's UI port only: a port can be published only from a non-internal network.
+  mailui: {}
+
+volumes:
+  pgdata: {}
+  # Used only when ATTACHMENTS_DIR=attachments (local runs, scripts/dev-up.sh).
+  attachments: {}

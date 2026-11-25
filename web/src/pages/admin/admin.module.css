@@ -1,0 +1,284 @@
+/* Admin configuration screens. */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* Wide enough for a six-column table with row actions at 1440 px (Mailboxes); narrower windows
+     scroll the table inside its own box. */
+  max-width: 1200px;
+  min-width: 0;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 520px;
+}
+
+/* A form in a wide dialog uses the dialog's width. */
+.formWide {
+  max-width: none;
+}
+
+/* Two form sections side by side on wide screens (e.g. Incoming | Outgoing). */
+.sections {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16px 24px;
+  align-items: start;
+}
+
+@media (min-width: 760px) {
+  .sections {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.sectionLegend {
+  float: left; /* keeps the border closed, as forms.module.css .legend */
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Name + address and similar pairs: side by side on wide screens. */
+.fieldPair {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px 16px;
+  align-items: end; /* inputs line up when only one field has a hint */
+}
+
+.secondLine {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px 16px;
+  align-items: end;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.muted {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.error {
+  margin: 0;
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.warning {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--color-note-border);
+  border-radius: var(--radius-md);
+  background: var(--color-note-bg);
+  color: var(--color-note-text);
+}
+
+.split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.splitMain {
+  flex: 1 1 380px;
+  min-width: 0;
+}
+
+.splitSide {
+  flex: 1 1 380px;
+  min-width: 0;
+}
+
+.logoBox {
+  display: inline-flex;
+  padding: 12px;
+  background: #ffffff; /* the logo is shown as it appears in a white email, in both themes */
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.details {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+  /* Not "word-break: break-word", which let the table squeeze Details to a few letters a line. */
+  overflow-wrap: break-word;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  overflow-wrap: break-word;
+}
+
+/* An inline result inside a card (e.g. Test connection): message, then its follow-up action. */
+.notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.noticeText {
+  flex: 1 1 320px;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: break-word;
+}
+
+.noticeInfo {
+  border-color: var(--color-brand-border);
+  background: var(--color-brand-tint);
+  color: var(--color-text);
+}
+
+.noticeSuccess {
+  border-color: var(--color-success-border);
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
+}
+
+.noticeError {
+  border-color: var(--color-danger-border);
+  color: var(--color-danger);
+}
+
+.domainList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 4px 16px;
+}
+
+/* Four priorities as a 2 x 2 grid (never 3 + an orphaned P4), one column on narrow screens and
+   four across when the screen is wide enough for the one-row targets. */
+.targets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .targets {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (min-width: 1800px) {
+  .page:has(.targets) {
+    max-width: 1440px;
+  }
+
+  .targets {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.targetRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* "First response [n] [unit]" on one row: label, number, unit. */
+.targetRow {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 6rem) minmax(0, 10rem); /* content-sized */
+  gap: 8px;
+  align-items: center;
+}
+
+.clockSelect,
+.clockText {
+  grid-column: 2 / -1;
+}
+
+.clockText {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-size);
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.colour {
+  width: var(--control-size);
+  height: var(--control-size);
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: none;
+}
+
+/* Request types: Up and Down side by side, so rows stay one control tall. */
+.orderButtons {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+.orderButton {
+  width: var(--control-size);
+  padding: 0;
+}
+
+.orderButton:disabled {
+  opacity: 0.35;
+}

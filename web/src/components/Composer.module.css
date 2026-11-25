@@ -1,0 +1,281 @@
+.composer {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.noteTab {
+  color: var(--color-note-text) !important;
+}
+
+.noteTabSelected {
+  background: var(--color-note-bg) !important;
+  border-bottom-color: var(--color-note-border) !important;
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 16px 16px;
+  gap: 10px;
+}
+
+.notePanel {
+  background: var(--color-note-bg);
+}
+
+.noteBanner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-note-text);
+}
+
+.internalLabel {
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-note-label-bg);
+  color: var(--color-note-label-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.recipients {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.linkButton {
+  min-height: var(--control-size);
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: var(--color-surface-subtle);
+  margin-bottom: -10px;
+}
+
+.tool {
+  width: var(--control-size);
+  height: var(--control-size);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tool:hover {
+  background: var(--color-divider);
+}
+
+.toolHint {
+  margin-left: auto;
+  padding-right: 6px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.editor {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--color-border-strong);
+  border-top: 0;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  background: var(--color-surface);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 120px;
+  max-height: 480px;
+  overflow-y: auto;
+  overflow-wrap: anywhere;
+}
+
+.editor:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
+}
+
+.editor img {
+  max-width: 100%;
+  height: auto;
+}
+
+.editorWrap {
+  position: relative;
+}
+
+/* In the flow under the editor (not floating), so it pushes the Send buttons down instead of
+   covering them. */
+.slashBox {
+  position: relative;
+  margin: 4px 8px 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 15%);
+}
+
+.slashList {
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.slashList li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: var(--control-size);
+  padding: 0 12px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.slashActive {
+  background: var(--color-brand-tint);
+}
+
+.slashKind {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.slashEmpty {
+  margin: 0;
+  padding: 12px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.file {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.error {
+  margin: 0;
+  padding: 10px 16px;
+  border-top: 1px solid var(--color-border);
+  color: var(--color-danger);
+  font-size: 14px;
+}
+
+.noteEditor {
+  border-color: var(--color-note-border);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.split {
+  display: flex;
+  margin-left: auto;
+}
+
+.send {
+  min-height: var(--control-size);
+  padding: 0 18px;
+  border: 0;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.send:hover {
+  background: var(--color-brand-hover);
+}
+
+.splitMain {
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+}
+
+.splitSecond {
+  padding: 0 12px;
+  border-left: 1px solid var(--color-brand-hover);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.addNote {
+  margin-left: auto;
+  border-radius: var(--radius-md);
+  background: var(--color-note-label-bg);
+  color: var(--color-note-label-text);
+}
+
+.addNote:hover {
+  background: var(--color-note-text);
+}
+
+@media (max-width: 520px) {
+  .split {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .splitMain,
+  .splitSecond {
+    border-radius: var(--radius-md);
+    border-left: 0;
+  }
+
+  .toolHint {
+    width: 100%;
+    margin-left: 0;
+    padding: 0 6px 4px;
+  }
+}

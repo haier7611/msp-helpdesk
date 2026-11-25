@@ -1,0 +1,19 @@
+Received: from mail.example (mail.example [192.0.2.10]) by mx.acmemsp.example; Tue, 17 Nov 2026 10:15:00 +0700
+Authentication-Results: mx.acmemsp.example;
+ spf=pass smtp.mailfrom=acmedental.example;
+ dkim=pass header.d=acmedental.example header.s=sel1;
+ dmarc=pass (p=quarantine dis=none) header.from=acmedental.example
+From: Dana Molar <dana.molar@acmedental.example>
+To: Acme MSP Support <support@acmemsp.example>
+Subject: Automatic reply: [ACD-042] Printer offline in reception
+Date: Tue, 17 Nov 2026 10:15:00 +0700
+Message-ID: <0009-ooo@acmedental.example>
+MIME-Version: 1.0
+Auto-Submitted: auto-replied
+X-Autoreply: yes
+In-Reply-To: <5f0c2a9e-1111-4c1e-9a52-0c3c1d6b7a01@acmemsp.example>
+References: <first-0001@acmedental.example> <5f0c2a9e-1111-4c1e-9a52-0c3c1d6b7a01@acmemsp.example>
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+I am out of the office until Monday 23 November.

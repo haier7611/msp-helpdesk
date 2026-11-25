@@ -1,0 +1,8 @@
+Hello [(${recipientName})],
+
+An administrator paused two-step sign-in on your [(${supportName})] account until [(${endsAt})]. Until then you sign in with your password (or Microsoft) only. After that you will be asked for your authenticator code again.
+
+Keep your password safe while the pause lasts: it is the only thing protecting your account.
+
+If you did not expect this, reset your password straight away and tell your IT team:
+[(${link})]

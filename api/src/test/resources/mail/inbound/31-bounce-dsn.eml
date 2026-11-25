@@ -1,0 +1,26 @@
+Return-Path: <>
+Received: from mail.example (mail.example [192.0.2.10]) by mx.acmemsp.example; Tue, 17 Nov 2026 10:15:00 +0700
+Authentication-Results: mx.acmemsp.example;
+ spf=pass smtp.mailfrom=mx.acmedental.example;
+ dkim=pass header.d=mx.acmedental.example header.s=sel1;
+ dmarc=pass header.from=mx.acmedental.example
+From: Mail Delivery System <MAILER-DAEMON@mx.acmedental.example>
+To: Acme MSP Support <support@acmemsp.example>
+Subject: Undelivered Mail Returned to Sender
+Date: Tue, 17 Nov 2026 10:15:00 +0700
+Message-ID: <0031-dsn@mx.acmedental.example>
+MIME-Version: 1.0
+Content-Type: multipart/report; report-type=delivery-status; boundary="dsn-1"
+
+--dsn-1
+Content-Type: text/plain; charset=us-ascii
+
+This is the mail system. Your message could not be delivered.
+--dsn-1
+Content-Type: message/delivery-status
+
+Reporting-MTA: dns; mx.acmedental.example
+Final-Recipient: rfc822; old.user@acmedental.example
+Action: failed
+Status: 5.1.1
+--dsn-1--

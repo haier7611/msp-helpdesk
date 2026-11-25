@@ -1,0 +1,15 @@
+Received: from mail.example (mail.example [192.0.2.10]) by mx.acmemsp.example; Tue, 17 Nov 2026 10:15:00 +0700
+Authentication-Results: mx.acmemsp.example;
+ spf=fail smtp.mailfrom=acmedental.example;
+ dkim=none header.d=acmedental.example header.s=sel1;
+ dmarc=fail header.from=acmedental.example
+From: Dana Molar <dana.molar@acmedental.example>
+To: Acme MSP Support <support@acmemsp.example>
+Subject: RE: [ACD-042] Please change the bank details
+Date: Tue, 17 Nov 2026 10:15:00 +0700
+Message-ID: <0014-spoof@attacker.example>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+Please pay invoices to the new account.

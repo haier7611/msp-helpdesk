@@ -1,0 +1,20 @@
+Received: from mail.example (mail.example [192.0.2.10]) by mx.acmemsp.example; Tue, 17 Nov 2026 10:15:00 +0700
+Authentication-Results: mx.acmemsp.example;
+ spf=pass smtp.mailfrom=acmemsp.example;
+ dkim=pass header.d=acmemsp.example header.s=sel1;
+ dmarc=pass header.from=acmemsp.example
+From: Sam Agent <sam.agent@acmemsp.example>
+To: Acme MSP Support <support+internal@acmemsp.example>
+Subject: RE: [ACD-042] (Internal) Ticket assigned to you
+Date: Tue, 17 Nov 2026 10:15:00 +0700
+Message-ID: <0019-internal@acmemsp.example>
+MIME-Version: 1.0
+In-Reply-To: <5f0c2a9e-2222-4c1e-9a52-0c3c1d6b7a02@acmemsp.example>
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+Checked the print server, the spooler had stopped. Restarted.
+
+From: Acme MSP Support <support+internal@acmemsp.example>
+Sent: 17 November 2026 09:30
+Subject: [ACD-042] (Internal) Ticket assigned to you

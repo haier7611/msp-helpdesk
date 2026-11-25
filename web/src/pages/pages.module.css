@@ -1,0 +1,881 @@
+/* Shared page layouts for the demo screens. */
+.split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.column {
+  flex: 999 1 640px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.columnNarrow {
+  flex: 999 1 520px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Queue views sidebar */
+.views {
+  flex: 1 1 220px;
+  max-width: 260px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.viewsHeading {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.viewsHeading + .viewsList {
+  margin-bottom: 12px;
+}
+
+.viewsList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.viewLink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: var(--control-size);
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.viewLink:hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.viewLink[aria-current="page"] {
+  background: var(--color-surface);
+  border-color: var(--color-brand-border);
+  color: var(--color-brand-strong-text);
+  font-weight: 600;
+}
+
+.warnCount {
+  color: var(--color-sla-risk-text);
+  font-weight: 600;
+}
+
+/* Links and name buttons inside table rows reach a 48 px target without making rows taller:
+   the negative block margin lets the hit area extend into the cell padding . */
+.refLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-size);
+  margin-block: -12px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.refLink:hover {
+  text-decoration: underline;
+}
+
+.subject {
+  font-weight: 500;
+}
+
+.subtle {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+/* A table header allowed to wrap (the queue's "First response"), so the narrow values
+   under it set the column width rather than the header text. */
+.wrapHeader {
+  white-space: normal;
+}
+
+/* Ticket detail */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-size);
+  font-size: 14px;
+  text-decoration: none;
+}
+
+/* Ticket header: reference, chips and title on the left, the SLA card on the right. The title keeps at least 420 px; below that the card wraps under it and, alone on
+   its line, takes the full width. The 999 grow keeps nearly all spare room for the title. */
+.ticketHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 24px;
+}
+
+.ticketTitle {
+  flex: 999 1 420px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ticketTitle h1 {
+  overflow-wrap: anywhere;
+}
+
+.ticketSla {
+  flex: 1 1 380px;
+}
+
+.ticketMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.ticketRef {
+  font-family: var(--font-heading);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-brand);
+}
+
+.conversation {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.details {
+  flex: 1 1 300px;
+  max-width: 360px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 8px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--color-text-secondary);
+}
+
+.facts dt {
+  color: var(--color-text-muted);
+}
+
+.facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere; /* long reporter emails wrap inside the card */
+}
+
+/* History disclosure: the summary is a 48 px target. */
+.historyToggle > summary {
+  line-height: var(--control-size); /* keeps the native disclosure triangle (display: list-item) */
+  cursor: pointer;
+}
+
+/* Inline "Move ticket?" confirmation under the Organisation dropdown. */
+.inlineConfirm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  padding: 12px;
+  border: 1px solid var(--color-note-border);
+  border-radius: var(--radius-md);
+  background: var(--color-note-bg);
+  color: var(--color-note-text);
+}
+
+.inlineConfirm:focus {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.inlineConfirmTitle {
+  margin: 0;
+  font-weight: 600;
+}
+
+.inlineConfirmText {
+  margin: 0;
+  font-size: 13px;
+}
+
+.slaRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.slaMet {
+  color: var(--color-sla-ok-text);
+  font-weight: 600;
+}
+
+.slaRisk {
+  color: var(--color-sla-risk-text);
+  font-weight: 600;
+}
+
+.progress {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--color-divider);
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  background: var(--color-sla-risk-bar);
+}
+
+.actionButton {
+  justify-content: flex-start;
+  width: 100%;
+}
+
+/* Supporters */
+.personName {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--control-size);
+  margin-block: -12px;
+}
+
+/* In the Agents table the name may wrap to two lines: it keeps its 48 px target and the email
+   always sits below it (the shared -12px block margin let a wrapped name cover the email). */
+.personCell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.personCell .personName {
+  margin-block: -12px 0;
+  padding-block: 4px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.personCell .subtle {
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.orgsCell {
+  display: block;
+}
+
+.noWrap {
+  white-space: nowrap;
+}
+
+@media (min-width: 641px) {
+  .personCell {
+    min-width: 12rem;
+    max-width: 18rem;
+  }
+
+  .orgsCell {
+    min-width: 8rem;
+    max-width: 14rem;
+  }
+}
+
+.personName:hover {
+  text-decoration: underline;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.panelName {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.reason {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.tabBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 16px;
+}
+
+.plainFieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.plainFieldset legend {
+  margin-bottom: 4px;
+  padding: 0;
+  font-size: 14px;
+}
+
+.plainList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+/* Settings */
+.settingsGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.profileCard {
+  flex: 1 1 340px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.profileCard h1 {
+  font-size: 22px;
+}
+
+.previewColumn {
+  flex: 1 1 400px;
+  min-width: 0;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.row > * {
+  flex: 1 1 140px;
+}
+
+.photoRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.alignStart {
+  align-self: flex-start;
+}
+
+.formNote {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* Portal */
+.portalWrap {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 32px;
+}
+
+.portalForm {
+  flex: 1 1 520px;
+  max-width: 680px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 32px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+}
+
+.portalForm h1 {
+  font-size: 28px;
+  margin-bottom: 6px;
+}
+
+.lead {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+}
+
+.dropzone {
+  padding: 20px;
+  border: 2px dashed var(--color-border-strong);
+  border-radius: 10px;
+  text-align: center;
+  color: var(--color-text-secondary);
+}
+
+.inlineLinkButton {
+  min-height: var(--control-size);
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: var(--color-link);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.portalAside {
+  flex: 1 1 300px;
+  max-width: 360px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.success {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px;
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success-border);
+  border-radius: var(--radius-xl);
+}
+
+.successLabel {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-success-text);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.success h2 {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  color: var(--color-success-strong);
+}
+
+.success p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-success-strong);
+}
+
+.successButton {
+  align-self: flex-start;
+  border-color: var(--color-success-text) !important;
+  color: var(--color-success-text) !important;
+  font-weight: 600;
+}
+
+.impactRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.impactRow > * {
+  flex: 1 1 240px;
+}
+
+/* Reports */
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 8px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tile {
+  padding: 10px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.tileLabel {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.tileValue {
+  margin-top: 4px;
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.tileSub {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.reportRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.reportRow > section {
+  flex: 1 1 420px;
+}
+
+.overBy {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+/* Sign-in */
+.signIn {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 32px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+}
+
+.signInBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.signInForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+@media (max-width: 767px) {
+  .views,
+  .details,
+  .portalAside {
+    max-width: none;
+  }
+
+  .views {
+    flex-basis: 100%;
+  }
+
+  .viewsList {
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 4px;
+  }
+
+  .viewLink {
+    white-space: nowrap;
+    background: var(--color-surface);
+    border-color: var(--color-border);
+  }
+
+  .portalForm {
+    padding: 20px;
+  }
+
+  .filtersEnd {
+    margin-left: 0;
+  }
+
+  .internalOnly {
+    margin-left: 0;
+    width: 100%;
+  }
+}
+
+/* Sign-in pages */
+.formError {
+  margin: 0;
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+/* My settings and Manage supporters */
+.photo {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.photoActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.fileButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.fileButton:focus-within {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.errorText {
+  margin: 0;
+  color: var(--color-danger);
+  font-size: 14px;
+}
+
+.filtersRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.filtersRow > * {
+  flex: 0 1 200px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.actionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.activityList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.activityList li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border);
+  overflow-wrap: anywhere;
+}
+
+.settingsCard {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 720px;
+  padding: 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.settingsCard h1 {
+  font-size: 22px;
+}
+
+.matrixWrap {
+  overflow-x: auto;
+}
+
+.matrix {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.matrix th,
+.matrix td {
+  padding: 8px;
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.matrix thead th {
+  white-space: nowrap;
+}
+
+.matrix .centre {
+  text-align: center;
+}
+
+.matrix input[type="checkbox"] {
+  width: 24px;
+  height: 24px;
+}
+
+/* Queue filters, paging, dialogs */
+.queueFilters {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 8px 12px;
+  align-items: end;
+  padding: 12px 16px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.queueFilters > * {
+  margin: 0;
+}
+
+.filterActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.ooo {
+  margin-left: 4px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.errorBox {
+  margin: 0;
+  padding: 12px 16px;
+  border: 1px solid var(--color-danger-border);
+  border-radius: var(--radius-md);
+  color: var(--color-danger);
+}
+
+/* The close dialog's "agents can't reopen" warning (WCAG AA on its tint). */
+.warningText {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-sla-risk-bg);
+  color: var(--color-sla-risk-text);
+  font-size: 13px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.refList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+/* A long participant email wraps inside the side card instead of widening the page. */
+.refList > li {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.history {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.inlineRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-end;
+}

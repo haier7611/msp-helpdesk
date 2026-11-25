@@ -1,0 +1,28 @@
+Received: from mail.example (mail.example [192.0.2.10]) by mx.acmemsp.example; Tue, 17 Nov 2026 10:15:00 +0700
+Authentication-Results: mx.acmemsp.example;
+ spf=pass smtp.mailfrom=dentalsupplies.example;
+ dkim=pass header.d=dentalsupplies.example header.s=sel1;
+ dmarc=pass header.from=dentalsupplies.example
+From: Dental Supplies News <news@dentalsupplies.example>
+To: Acme MSP Support <support@acmemsp.example>
+Subject: November offers on gloves and masks
+Date: Tue, 17 Nov 2026 10:15:00 +0700
+Message-ID: <0011-news@dentalsupplies.example>
+MIME-Version: 1.0
+List-Unsubscribe: <https://dentalsupplies.example/unsub?u=1>, <mailto:unsub@dentalsupplies.example>
+List-Unsubscribe-Post: List-Unsubscribe=One-Click
+List-Id: Offers <offers.dentalsupplies.example>
+Precedence: bulk
+Content-Type: multipart/alternative; boundary="alt-b1"
+
+--alt-b1
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+Big savings this month.
+--alt-b1
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+<p>Big savings this month.</p><img src="https://track.dentalsupplies.example/open.gif?u=1" width="1" height="1">
+--alt-b1--

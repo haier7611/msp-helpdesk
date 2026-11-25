@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{mail-templates/html/layout.html :: layout(~{::title}, ~{::#content})}">
+<head><title th:text="|Your ${supportName} administrator account is ready|">Account ready</title></head>
+<body>
+<div id="content">
+  <p style="margin:0 0 16px;">Hello <span th:text="${recipientName}">Alex</span>,</p>
+  <p style="margin:0 0 16px;">Setup is complete: you are the first administrator of <span th:text="${supportName}">Support</span>.</p>
+  <p style="margin:0 0 16px;">Next steps: set up two-step sign-in, then invite your agents from Admin - Agents.</p>
+  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0 16px;">
+    <tr>
+      <td style="background-color:#2B5797;border-radius:4px;">
+        <a th:href="${signInLink}" href="#" style="display:inline-block;padding:12px 24px;font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;color:#ffffff;text-decoration:none;">Sign in</a>
+      </td>
+    </tr>
+  </table>
+  <p style="margin:0;">If you did not set up this account, contact your IT team straight away.</p>
+</div>
+</body>
+</html>

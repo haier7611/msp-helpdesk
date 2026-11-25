@@ -1,0 +1,43 @@
+Received: from mail.example (mail.example [192.0.2.10]) by mx.acmemsp.example; Tue, 17 Nov 2026 10:15:00 +0700
+Authentication-Results: mx.acmemsp.example;
+ spf=pass smtp.mailfrom=acmedental.example;
+ dkim=pass header.d=acmedental.example header.s=sel1;
+ dmarc=pass (p=quarantine dis=none) header.from=acmedental.example
+From: Dana Molar <dana.molar@acmedental.example>
+To: Acme MSP Support <support@acmemsp.example>
+Subject: [ACD-042] Screenshot of the error
+Date: Tue, 17 Nov 2026 10:15:00 +0700
+Message-ID: <0021-inline@acmedental.example>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="mix-1"
+
+--mix-1
+Content-Type: multipart/related; boundary="rel-1"
+
+--rel-1
+Content-Type: multipart/alternative; boundary="alt-1"
+
+--alt-1
+Content-Type: text/plain; charset=utf-8
+
+See the screenshot.
+[image: error.png]
+--alt-1
+Content-Type: text/html; charset=utf-8
+
+<p>See the screenshot.</p><p><img src="cid:image001.png@01DB0000.00000000" alt="error.png"></p>
+--alt-1--
+--rel-1
+Content-Type: image/png; name="image001.png"
+Content-Transfer-Encoding: base64
+Content-ID: <image001.png@01DB0000.00000000>
+
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP4//8/AAX+Av6n1qTFAAAAAElFTkSuQmCC
+--rel-1--
+--mix-1
+Content-Type: application/pdf; name="error-log.pdf"
+Content-Disposition: attachment; filename="error-log.pdf"
+Content-Transfer-Encoding: base64
+
+JVBERi0xLjQKJSVFT0YK
+--mix-1--

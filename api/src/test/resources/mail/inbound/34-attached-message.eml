@@ -1,0 +1,26 @@
+Received: from mail.example (mail.example [192.0.2.10]) by mx.acmemsp.example; Tue, 17 Nov 2026 10:15:00 +0700
+Authentication-Results: mx.acmemsp.example;
+ spf=pass smtp.mailfrom=acmedental.example;
+ dkim=pass header.d=acmedental.example header.s=sel1;
+ dmarc=pass (p=quarantine dis=none) header.from=acmedental.example
+From: Dana Molar <dana.molar@acmedental.example>
+To: Acme MSP Support <support@acmemsp.example>
+Subject: Suspicious email, please check
+Date: Tue, 17 Nov 2026 10:15:00 +0700
+Message-ID: <0034-rfc822@acmedental.example>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="mix-34"
+
+--mix-34
+Content-Type: text/plain; charset=utf-8
+
+Is this phishing?
+--mix-34
+Content-Type: message/rfc822
+
+From: Bank <alerts@bank.example>
+Subject: Verify your account
+Message-ID: <inner-34@bank.example>
+
+Click the link to verify.
+--mix-34--

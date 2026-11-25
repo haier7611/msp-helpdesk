@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{mail-templates/html/layout.html :: layout(~{::title}, ~{::#content})}">
+<head><title th:text="|Two-step sign-in was paused on your ${supportName} account|">Two-step sign-in paused</title></head>
+<body>
+<div id="content">
+  <p style="margin:0 0 16px;">Hello <span th:text="${recipientName}">Alex</span>,</p>
+  <p style="margin:0 0 16px;">An administrator paused two-step sign-in on your <span th:text="${supportName}">Support</span> account until <strong th:text="${endsAt}">4 December 2026, 09:30 UTC</strong>. Until then you sign in with your password (or Microsoft) only. After that you will be asked for your authenticator code again.</p>
+  <p style="margin:0 0 16px;">Keep your password safe while the pause lasts: it is the only thing protecting your account.</p>
+  <p style="margin:0 0 16px;">If you did not expect this, reset your password straight away and tell your IT team:</p>
+  <p style="margin:0;font-size:13px;line-height:20px;color:#555b62;"><a th:href="${link}" th:text="${link}" href="#" style="color:#2B5797;word-break:break-all;">link</a></p>
+</div>
+</body>
+</html>

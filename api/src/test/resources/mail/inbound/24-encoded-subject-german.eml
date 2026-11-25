@@ -1,0 +1,19 @@
+Received: from mail.example (mail.example [192.0.2.10]) by mx.acmemsp.example; Tue, 17 Nov 2026 10:15:00 +0700
+Authentication-Results: mx.acmemsp.example;
+ spf=pass smtp.mailfrom=riverlaw.example;
+ dkim=pass header.d=riverlaw.example header.s=sel1;
+ dmarc=pass header.from=riverlaw.example
+From: =?UTF-8?Q?J=C3=B6rg_M=C3=BCller?= <joerg@riverlaw.example>
+To: Acme MSP Support <support@acmemsp.example>
+Subject: =?UTF-8?B?QVc6IFtybHctN10gRHJ1Y2tlciBmdW5rdGlvbmllcnQgbmljaHQg4oCTIGRyaW5nZW5k?=
+Date: Tue, 17 Nov 2026 10:15:00 +0700
+Message-ID: <0024-de@riverlaw.example>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
+Content-Transfer-Encoding: quoted-printable
+
+Der Drucker funktioniert immer noch nicht. Gr=FC=DFe
+
+Von: Acme MSP Support <support@acmemsp.example>
+Gesendet: Montag, 16. November 2026 16:02
+Betreff: [RLW-007] Drucker

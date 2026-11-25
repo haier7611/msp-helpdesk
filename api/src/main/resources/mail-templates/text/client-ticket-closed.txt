@@ -1,0 +1,5 @@
+Hello,
+
+Your request "[(${ticketSubject})]" has now been closed, as we had marked it as resolved and did not hear back.
+
+If you still need help, reply to this email and we will open a follow-up for you.

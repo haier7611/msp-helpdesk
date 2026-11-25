@@ -1,0 +1,6 @@
+Hello [(${recipientName})],
+
+An administrator changed your role on your [(${supportName})] account. You have been signed out everywhere; sign in again to carry on.
+
+If you did not expect this, tell your IT team. You can also reset your password here:
+[(${link})]

@@ -1,0 +1,6 @@
+# Accepted vulnerability exceptions for scripts/ci/vuln-scan.sh (Trivy).
+# One CVE/GHSA id per line, each with a comment: date, why it does not apply or why it waits,
+# who accepted it, and when to re-check. Empty = no exceptions.
+
+# None. CVE-2026-47884 and CVE-2026-47890 (spring-webmvc 6.2.19) were removed by the move to
+# Spring Boot 4: Spring Boot 4.0.9 ships spring-webmvc 7.0.10, which has the fix (docs/35-security.md).

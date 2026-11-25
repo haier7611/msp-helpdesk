@@ -1,0 +1,5 @@
+Hello [(${recipientName})],
+
+An administrator deactivated your [(${supportName})] account. You have been signed out everywhere and cannot sign in until an administrator reactivates it.
+
+If you did not expect this, tell your IT team.

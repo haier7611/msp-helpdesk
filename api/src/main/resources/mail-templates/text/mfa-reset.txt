@@ -1,0 +1,6 @@
+Hello [(${recipientName})],
+
+An administrator reset two-step sign-in on your [(${supportName})] account. You have been signed out everywhere, and you will set up your authenticator app again the next time you sign in.
+
+If you did not ask for this, reset your password straight away and tell your IT team:
+[(${link})]

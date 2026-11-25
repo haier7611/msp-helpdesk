@@ -1,0 +1,6 @@
+Hello [(${recipientName})],
+
+Open this link to sign in to [(${supportName})]. You do not need a password.
+[(${link})]
+
+This link works once and expires in [(${validFor})]. If you did not ask to sign in, you can ignore this email.

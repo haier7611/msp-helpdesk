@@ -1,0 +1,15 @@
+Received: from mail.example (mail.example [192.0.2.10]) by mx.acmemsp.example; Tue, 17 Nov 2026 10:15:00 +0700
+Authentication-Results: mx.acmemsp.example;
+ spf=pass smtp.mailfrom=backupmonitor.example;
+ dkim=pass header.d=backupmonitor.example header.s=sel1;
+ dmarc=pass header.from=backupmonitor.example
+From: Backup Monitor <no-reply@backupmonitor.example>
+To: Acme MSP Support <support@acmemsp.example>
+Subject: Backup job failed: ACD-FS01
+Date: Tue, 17 Nov 2026 10:15:00 +0700
+Message-ID: <0012-alert@backupmonitor.example>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+Job 'Nightly' failed at 02:00 with error 0x80070005.

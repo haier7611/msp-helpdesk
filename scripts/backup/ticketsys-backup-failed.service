@@ -1,0 +1,6 @@
+[Unit]
+Description=Mark a failed Ticket System backup (writes backups/BACKUP_FAILED)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/ticketsys-backup-failed

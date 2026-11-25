@@ -1,0 +1,41 @@
+MSP Helpdesk
+Copyright 2026 Hai Nguyen
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product bundles the following fonts in the web application build, each licensed under the
+SIL Open Font License, Version 1.1 (https://openfontlicense.org), and distributed through the
+@fontsource npm packages:
+
+  Inter - Copyright 2016 The Inter Project Authors (https://github.com/rsms/inter)
+  Space Grotesk - Copyright 2020 The Space Grotesk Project Authors
+    (https://github.com/floriankarsten/space-grotesk)
+
+The fonts are not covered by the Apache License. The full licence text ships with each package
+(node_modules/@fontsource/inter/LICENSE and node_modules/@fontsource/space-grotesk/LICENSE after
+npm ci) and is published at https://openfontlicense.org/open-font-license-official-text/.
+
+This product bundles a data file, api/src/main/resources/security/breached-passwords-12plus.txt.gz,
+used to refuse known-breached passwords. It is a lower-cased subset (entries of 12 or more
+characters) derived from the password lists in SecLists
+(https://github.com/danielmiessler/SecLists), licensed under the MIT License:
+
+  Copyright (c) 2018 Daniel Miessler
+
+  Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+  and associated documentation files (the "Software"), to deal in the Software without
+  restriction, including without limitation the rights to use, copy, modify, merge, publish,
+  distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the
+  Software is furnished to do so, subject to the following conditions:
+
+  The above copyright notice and this permission notice shall be included in all copies or
+  substantial portions of the Software.
+
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
+  BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+  DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+Other third-party libraries are used as dependencies under their own licences; see
+api/build.gradle.kts, api/gradle.lockfile and web/package-lock.json.

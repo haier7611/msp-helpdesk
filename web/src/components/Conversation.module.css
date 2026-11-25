@@ -1,0 +1,175 @@
+.card {
+  padding: 16px 20px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.reply {
+  border-color: var(--color-brand-border);
+}
+
+.reply .meta {
+  color: var(--color-brand-strong-text);
+}
+
+.note {
+  background: var(--color-note-bg);
+  border-color: var(--color-note-border);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.note .header {
+  align-items: center;
+}
+
+.author {
+  font-size: 14px;
+}
+
+.meta {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.noteMeta {
+  font-size: 12px;
+  color: var(--color-note-text);
+}
+
+.internalLabel {
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-note-label-bg);
+  color: var(--color-note-label-text);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.body {
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.body p {
+  margin: 0;
+}
+
+/* Attachments sit in normal flow inside their card (fix 2026-11-20): the old .attachment rule was
+   the early design placeholder - a fixed 160x96 / 220x110 box - and the real file list spilled out
+   of it over the cards below. No fixed height, no absolute positioning, no overflow. */
+.attachments {
+  min-width: 0;
+  margin-top: 12px;
+}
+
+.footnote {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.files {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr));
+  align-items: start;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.fileItem {
+  display: flex;
+  min-width: 0;
+}
+
+.fileLink {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-size);
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-link);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.fileTile {
+  flex-direction: row;
+  align-items: flex-start;
+}
+
+.note .fileLink {
+  border-color: var(--color-note-border);
+  background: var(--color-note-attachment-bg);
+}
+
+.fileIcon {
+  flex: none;
+  color: var(--color-text-muted);
+}
+
+.note .fileIcon {
+  color: var(--color-note-text);
+}
+
+/* Long names (no spaces, or encoded) break anywhere instead of overflowing the tile. */
+.fileName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.thumb {
+  display: block;
+  width: 100%;
+  height: 96px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--color-placeholder-bg);
+}
+
+.system {
+  padding: 8px 14px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.systemLabel {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* An assignee change - one slim muted line between the cards, not a card. */
+.assignment {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 2px 14px;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.assignmentIcon {
+  flex: none;
+}

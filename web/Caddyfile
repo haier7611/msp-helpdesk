@@ -1,0 +1,96 @@
+# Web container: serves the built React app and proxies the API (same origin, no CORS).
+# Put an HTTPS reverse proxy (TLS edge) in front of it; it must be the only thing that can reach
+# this listener, because X-Forwarded-* from it are trusted (docs/deployment.md).
+{
+	admin off
+	auto_https off
+	servers {
+		# The reverse proxy and Docker deliver requests from private addresses; keep the X-Forwarded-*
+		# headers they carry so the api sees the public https URL.
+		trusted_proxies static private_ranges
+	}
+}
+
+# Headers every response carries, the Mailpit route included.
+(base_headers) {
+	X-Content-Type-Options nosniff
+	Referrer-Policy strict-origin-when-cross-origin
+	Permissions-Policy "camera=(), microphone=(), geolocation=()"
+	-Server
+}
+
+:8080 {
+	encode zstd gzip
+
+	@app not path /mailpit /mailpit/*
+	header @app {
+		import base_headers
+		X-Frame-Options DENY
+		# "?" = only when the response has none, so attachment downloads keep the api's sandbox CSP.
+		?Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+	}
+
+	# The Mailpit test inbox, demo compose profile only. Fails closed: the
+	# route exists only while MAILPIT_UI_HASH (a bcrypt hash, from the host .env) is a real value;
+	# unset, or the "disabled" that docker-compose.yml substitutes for an empty value, = 404 for
+	# everyone (a Caddyfile cannot hold an empty basic_auth password, hence the placeholder word).
+	# Mailpit runs with MP_WEBROOT=/mailpit, so the path is passed on unchanged. Its message
+	# preview is an iframe of the same origin, so this route allows SAMEORIGIN framing and inline
+	# styles, and nothing else is loosened.
+	handle /mailpit* {
+		@enabled expression `"{$MAILPIT_UI_HASH:disabled}" != "disabled"`
+		handle @enabled {
+			basic_auth {
+				{$MAILPIT_UI_USER:qa} {$MAILPIT_UI_HASH:disabled}
+			}
+			header {
+				import base_headers
+				X-Frame-Options SAMEORIGIN
+				Content-Security-Policy "default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self'; frame-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+				Cache-Control "no-store"
+			}
+			redir /mailpit /mailpit/ 308
+			reverse_proxy mailpit:8025
+		}
+		handle {
+			respond 404
+		}
+	}
+
+	handle /api/* {
+		reverse_proxy api:8080
+	}
+
+	handle /actuator/health {
+		reverse_proxy api:8080
+	}
+
+	# Nothing else under /actuator is public.
+	handle /actuator/* {
+		respond 404
+	}
+
+	# Static app. Caching (browsers kept the old index.html after a deploy because
+	# it had an ETag but no Cache-Control, so they cached it heuristically). Set here only, never
+	# on /api/* (the api sets its own) or /mailpit (no-store):
+	#  - an existing file under /assets/ is content-hashed Vite output: cache for a year.
+	#  - everything else (index.html, every SPA route that falls back to it, favicon, manifest,
+	#    robots, a missing /assets/ file that falls back to index.html) must revalidate every time;
+	#    the ETag makes that a cheap 304.
+	handle /assets/* {
+		root * /srv
+		@exists file {path}
+		header @exists Cache-Control "public, max-age=31536000, immutable"
+		@missing not file {path}
+		header @missing Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+
+	handle {
+		root * /srv
+		header Cache-Control "no-cache"
+		try_files {path} /index.html
+		file_server
+	}
+}

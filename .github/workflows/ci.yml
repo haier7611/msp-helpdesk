@@ -1,0 +1,98 @@
+# CI: every stage runs through scripts/ci/*.sh, the same scripts you can run by hand
+# (docs/20-test-strategy.md). Every tool runs in a pinned container started by the scripts;
+# the runner needs only Docker, which ubuntu-latest has.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Names the scripts' containers (ticketsys-ci-<stage>-<tag>) so parallel runs never collide.
+  TICKETSYS_CI_TAG: gh-${{ github.run_id }}-${{ github.run_attempt }}
+
+jobs:
+  conflict-markers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: scripts/ci/conflict-markers.sh
+
+  api:
+    needs: conflict-markers
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ${{ runner.temp }}/ticketsys-cache/gradle/caches
+            ${{ runner.temp }}/ticketsys-cache/gradle/wrapper
+          key: gradle-${{ runner.os }}-${{ hashFiles('api/gradle.lockfile', 'api/*.gradle.kts', 'api/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-${{ runner.os }}-
+      # Spotless check, compile, unit tests and Testcontainers integration tests (Postgres 16).
+      - run: scripts/ci/api.sh spotlessCheck build
+        env:
+          TICKETSYS_GRADLE_CACHE: ${{ runner.temp }}/ticketsys-cache/gradle
+      - name: Test reports
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: api-test-reports
+          path: api/build/reports/tests/test/
+          retention-days: 7
+
+  web:
+    needs: conflict-markers
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/ticketsys-cache/npm
+          key: npm-${{ runner.os }}-${{ hashFiles('web/package-lock.json') }}
+          restore-keys: npm-${{ runner.os }}-
+      # npm ci, lint, typecheck, format:check, test, build; then the Caddyfile and mail evidence
+      # real-container checks.
+      - run: scripts/ci/web.sh
+        env:
+          TICKETSYS_NPM_CACHE: ${{ runner.temp }}/ticketsys-cache/npm
+
+  vuln-scan:
+    needs: conflict-markers
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Week number for the vulnerability DB cache
+        id: week
+        run: echo "week=$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+      # Trivy refreshes its DB when it is older than a day; the cache only saves the first download.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/ticketsys-cache/trivy
+          key: trivy-db-${{ steps.week.outputs.week }}
+          restore-keys: trivy-db-
+      # Trivy over api/gradle.lockfile and web/package-lock.json; fails on fixable HIGH/CRITICAL.
+      - run: scripts/ci/vuln-scan.sh
+        env:
+          TICKETSYS_TRIVY_CACHE: ${{ runner.temp }}/ticketsys-cache/trivy

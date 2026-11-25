@@ -1,0 +1,221 @@
+.scroller {
+  /* Contains the absolutely positioned visually-hidden text in cells, so it cannot widen the page. */
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.min380 {
+  min-width: 380px;
+}
+
+.min640 {
+  min-width: 640px;
+}
+
+.min860 {
+  min-width: 860px;
+}
+
+.table thead th {
+  padding: 12px 16px;
+  /* "LAST POLL" never splits onto two lines; a table too wide for its box scrolls inside it. */
+  white-space: nowrap;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.table tbody th,
+.table tbody td {
+  padding: 14px 16px;
+  border-top: 1px solid var(--color-divider);
+  text-align: left;
+  vertical-align: top;
+  font-weight: 400;
+}
+
+.compact {
+  font-size: 13px;
+}
+
+.compact thead th {
+  padding: 8px;
+  font-size: 11px;
+}
+
+.compact tbody th,
+.compact tbody td {
+  padding: 10px 8px;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.selected {
+  background: var(--color-row-selected);
+}
+
+.state {
+  padding: 32px 16px !important;
+  text-align: center !important;
+  color: var(--color-text-muted);
+}
+
+/* A lone button in a cell (Edit, Invite, Remove) keeps its 48 px target but no longer makes its
+   row taller than the others or sit below the text line. */
+.table tbody td > button:only-child {
+  margin-block: -12px;
+}
+
+/* Row actions (Column.actions): the buttons stay on one row and the column shrinks to fit them
+   (width: 1% on an auto-layout table means "as narrow as the content allows"). */
+.actionsCell {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* When the table is wider than its box, the actions stay pinned at the right edge, so pressing
+   "Remove" never scrolls the box sideways and cuts the first columns off at the left. */
+.table .actionsCell {
+  position: sticky;
+  right: 0;
+  background: var(--color-surface);
+  /* A hairline where scrolled columns slide under the pinned actions. */
+  box-shadow: inset 1px 0 0 var(--color-divider);
+}
+
+.selected .actionsCell {
+  background: var(--color-row-selected);
+}
+
+.rowActions {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  /* Same as the lone-button rule above: 48 px targets without a taller row. */
+  margin-block: -12px;
+}
+
+.compact .rowActions {
+  margin-block: -8px;
+}
+
+/* Email addresses and other long identifiers (Identifier). */
+.identifier {
+  font: inherit;
+  overflow-wrap: break-word;
+}
+
+/* Stacked cards at phone width (stackOnPhone). The table keeps its semantics; only the layout
+   changes: one card per row, each cell a "label  value" line, no sideways scroll. */
+.cellLabel {
+  display: none;
+}
+
+.cellValue {
+  min-width: 0;
+}
+
+@media (max-width: 640px) {
+  .stack {
+    overflow-x: visible;
+  }
+
+  .stack .table {
+    min-width: 0;
+  }
+
+  .stack thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .stack tbody,
+  .stack tbody tr {
+    display: block;
+  }
+
+  .stack tbody tr {
+    padding: 8px 0;
+    border-top: 1px solid var(--color-divider);
+  }
+
+  .stack tbody tr:first-child {
+    border-top: 0;
+  }
+
+  .stack tbody th,
+  .stack tbody td {
+    display: grid;
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: 8px;
+    align-items: baseline;
+    justify-items: start;
+    padding: 4px 16px;
+    border-top: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  /* Empty cells (e.g. no SLA) take no line. */
+  .stack tbody td:empty {
+    display: none;
+  }
+
+  .stack .cellLabel {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--color-text-muted);
+  }
+
+  .stack .state {
+    display: block;
+  }
+
+  /* No label column for the actions line: the buttons get the card's full width. */
+  .stack tbody .actionsCell {
+    display: block;
+  }
+
+  .stack .actionsCell {
+    position: static;
+    width: auto;
+    background: none;
+    box-shadow: none;
+  }
+
+  /* A card line is narrow and fit-to-content, so here a long address or detail value may break
+     anywhere (cell content such as the Audit log details list must not widen the page). */
+  .stack tbody th *,
+  .stack tbody td * {
+    overflow-wrap: anywhere;
+  }
+
+  .stack .rowActions {
+    flex-wrap: wrap;
+    margin-block: 0;
+  }
+}

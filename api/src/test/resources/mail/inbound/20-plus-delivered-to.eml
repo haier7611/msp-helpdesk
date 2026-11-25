@@ -1,0 +1,16 @@
+Delivered-To: Support+Internal@AcmeMSP.example
+Received: from mail.example (mail.example [192.0.2.10]) by mx.acmemsp.example; Tue, 17 Nov 2026 10:15:00 +0700
+Authentication-Results: mx.acmemsp.example;
+ spf=pass smtp.mailfrom=acmemsp.example;
+ dkim=pass header.d=acmemsp.example header.s=sel1;
+ dmarc=pass header.from=acmemsp.example
+From: Sam Agent <sam.agent@acmemsp.example>
+To: MSP Team <team@acmemsp.example>
+Subject: Re: [ACD-042] (Internal) Client replied
+Date: Tue, 17 Nov 2026 10:15:00 +0700
+Message-ID: <0020-delivered@acmemsp.example>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+Noted, I will call them.

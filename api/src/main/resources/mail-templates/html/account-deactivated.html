@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{mail-templates/html/layout.html :: layout(~{::title}, ~{::#content})}">
+<head><title th:text="|Your ${supportName} account was deactivated|">Account deactivated</title></head>
+<body>
+<div id="content">
+  <p style="margin:0 0 16px;">Hello <span th:text="${recipientName}">Alex</span>,</p>
+  <p style="margin:0 0 16px;">An administrator deactivated your <span th:text="${supportName}">Support</span> account. You have been signed out everywhere and cannot sign in until an administrator reactivates it.</p>
+  <p style="margin:0;">If you did not expect this, tell your IT team.</p>
+</div>
+</body>
+</html>

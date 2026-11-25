@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{mail-templates/html/layout.html :: layout(~{::title}, ~{::#content})}">
+<head><title th:text="|New sign-in to your ${supportName} account|">New sign-in</title></head>
+<body>
+<div id="content">
+  <p style="margin:0 0 16px;">Hello <span th:text="${recipientName}">Alex</span>,</p>
+  <p style="margin:0 0 16px;">Your <span th:text="${supportName}">Support</span> account was just signed in to from a browser it has not been used on before: <strong th:text="${device}">Firefox on Windows</strong>.</p>
+  <p style="margin:0 0 16px;">If this was you, there is nothing more to do.</p>
+  <p style="margin:0 0 16px;">If it was not you, reset your password straight away and tell your IT team:</p>
+  <p style="margin:0;font-size:13px;line-height:20px;color:#555b62;"><a th:href="${link}" th:text="${link}" href="#" style="color:#2B5797;word-break:break-all;">link</a></p>
+</div>
+</body>
+</html>

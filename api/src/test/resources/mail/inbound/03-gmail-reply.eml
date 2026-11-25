@@ -1,0 +1,35 @@
+Received: from mail.example (mail.example [192.0.2.10]) by mx.acmemsp.example; Tue, 17 Nov 2026 10:15:00 +0700
+Authentication-Results: mx.acmemsp.example;
+ spf=pass smtp.mailfrom=acmedental.example;
+ dkim=pass header.d=acmedental.example header.s=sel1;
+ dmarc=pass (p=quarantine dis=none) header.from=acmedental.example
+From: Riley Fern <riley.fern@acmedental.example>
+To: Acme MSP Support <support@acmemsp.example>
+Subject: Re: [ACD-042] Printer offline in reception
+Date: Tue, 17 Nov 2026 10:15:00 +0700
+Message-ID: <CAF=abc123+gm@mail.acmedental.example>
+MIME-Version: 1.0
+In-Reply-To: <5f0c2a9e-1111-4c1e-9a52-0c3c1d6b7a01@acmemsp.example>
+References: <first-0001@acmedental.example> <5f0c2a9e-1111-4c1e-9a52-0c3c1d6b7a01@acmemsp.example>
+Content-Type: multipart/alternative; boundary="alt-b1"
+
+--alt-b1
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+Fixed now, thank you!
+
+Riley
+
+On Tue, 17 Nov 2026 at 09:12, Acme MSP Support <support@acmemsp.example>
+wrote:
+
+> Please restart the printer and let us know.
+>
+> Reference: ACD-042.
+--alt-b1
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+<div dir="ltr">Fixed now, thank you!<div><br></div><div>Riley</div></div><br><div class="gmail_quote gmail_quote_container"><div dir="ltr" class="gmail_attr">On Tue, 17 Nov 2026 at 09:12, Acme MSP Support &lt;<a href="mailto:support@acmemsp.example">support@acmemsp.example</a>&gt; wrote:<br></div><blockquote class="gmail_quote" style="margin:0px 0px 0px 0.8ex;border-left:1px solid rgb(204,204,204)">Please restart the printer and let us know.<br>Reference: ACD-042.</blockquote></div>
+--alt-b1--

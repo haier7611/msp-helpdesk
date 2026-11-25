@@ -1,0 +1,8 @@
+Hello [(${recipientName})],
+
+Two-step sign-in was just set up on your [(${supportName})] account with a new authenticator app, and new recovery codes were made. Any older codes and trusted devices no longer work.
+
+If this was you, there is nothing more to do.
+
+If it was not you, reset your password straight away and tell your IT team:
+[(${link})]

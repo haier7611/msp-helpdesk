@@ -1,0 +1,123 @@
+spring:
+  application:
+    name: ticket-system-api
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ticketsys}
+    username: ${SPRING_DATASOURCE_USERNAME:ticketsys}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  # In production Flyway runs as the owner role (SPRING_FLYWAY_USER/PASSWORD = the Postgres
+  # owner) and the app connects as the restricted ticketsys_app role (migration V5).
+  flyway:
+    enabled: true
+  # Server-side sessions in Postgres (C3). Flyway owns the tables (V4). 8 h idle; the 24 h absolute
+  # limit is app.auth.session-absolute-timeout.
+  session:
+    timeout: 8h
+    jdbc:
+      initialize-schema: never
+  main:
+    banner-mode: off
+  # Attachments: 20 MB per file; the service checks again after reading.
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 21MB
+
+server:
+  port: 8080
+  shutdown: graceful
+  # Behind a reverse proxy chain ending at the web Caddy. The api publishes no port, so only the
+  # proxy chain can set X-Forwarded-*; redirects and secure cookies then use the public https URL.
+  # native = Tomcat's RemoteIpValve: the client IP used for rate caps and the audit log is
+  # the right-most X-Forwarded-For entry that is not a private/loopback proxy address, so a client
+  # cannot choose its own IP by sending X-Forwarded-For.
+  forward-headers-strategy: native
+  # Lets Tomcat read and discard an oversized upload so the client gets the 413 answer.
+  tomcat:
+    max-swallow-size: 25MB
+  servlet:
+    session:
+      timeout: 8h
+  error:
+    include-stacktrace: never
+    include-message: never
+
+# Only /actuator/health is exposed, with no details or components (public endpoint).
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      show-components: never
+      # Spring Boot 4 turns liveness/readiness probes on by default, which adds a "groups" list
+      # to the public response. Off, so /actuator/health stays exactly {"status":"UP"}.
+      probes:
+        enabled: false
+
+  # An SMTP outage must never mark the api DOWN (mail retries from the outbox instead).
+  health:
+    mail:
+      enabled: false
+
+app:
+  git-sha: ${APP_GIT_SHA:unknown}
+  # Core auth. The first-admin setup token is TS_SETUP_TOKEN (read by SetupService only,
+  # never part of these properties and never logged). No OIDC/Entra client here: Microsoft
+  # sign-in is configured by an admin in the database.
+  auth:
+    public-base-url: ${TS_PUBLIC_BASE_URL:http://localhost:5173}
+    secure-cookies: ${TS_SECURE_COOKIES:true}
+    session-absolute-timeout: 24h
+    supporter-invitation-validity: 48h
+    customer-invitation-validity: 7d
+    password-reset-validity: 15m
+    magic-link-validity: 15m
+  # Encryption at rest for MFA secrets and later mailbox credentials.
+  # TS_DATA_KEY = 64 hex characters (openssl rand -hex 32), required; TS_DATA_KEY_ID names it in
+  # every stored value; TS_DATA_OLD_KEYS = id:hex,... keeps retired keys readable during rotation.
+  crypto:
+    data-key: ${TS_DATA_KEY:}
+    data-key-id: ${TS_DATA_KEY_ID:k1}
+    old-keys: ${TS_DATA_OLD_KEYS:}
+  attachments-dir: ${ATTACHMENTS_DIR:/data/attachments}
+  # Per-agent cap on public replies and internal notes from the agent UI (one shared count, both
+  # windows apply; over either the api answers 429 too_many_requests with Retry-After). These are
+  # the defaults; override with e.g. APP_RATELIMITS_AGENTMESSAGES_SHORTMAX.
+  rate-limits:
+    agent-messages:
+      short-max: 30
+      short-period: 1m
+      long-max: 300
+      long-period: 1h
+  # Outbound mail: one bootstrap SMTP sender from the server environment until the
+  # admin mailbox screen exists. Empty SMTP_HOST = not configured: mail is queued, not sent.
+  # Validated at startup (MailSettings); SMTP_PASSWORD is checked by PlaceholderSecretGuard.
+  mail:
+    support-name: ${MAIL_SUPPORT_NAME:Ticket System}
+    from-address: ${MAIL_FROM_ADDRESS:}
+    message-id-domain: ${MAIL_MESSAGE_ID_DOMAIN:}
+    smtp:
+      host: ${SMTP_HOST:}
+      port: ${SMTP_PORT:}
+      security: ${SMTP_SECURITY:starttls}
+      username: ${SMTP_USERNAME:}
+      password: ${SMTP_PASSWORD:}
+    # Inbound mail: mailboxes are configured by an admin in the database, not here.
+    # The poller runs every poll-interval (ISO-8601) and polls only enabled mailboxes, on its own
+    # thread. An email's files are processed after its ticket or comment is committed,
+    # by one background worker thread (attachments.async; false runs them on the poller's thread).
+    inbound:
+      auto-start: true
+      poll-interval: PT30S
+      initial-delay: PT30S
+      attachments:
+        async: true
+    outbox:
+      auto-start: true
+      poll-interval: 15s
+      batch-size: 20
+      retry-delays: 1m,2m,4m,8m,16m,32m
+      stale-after: 10m

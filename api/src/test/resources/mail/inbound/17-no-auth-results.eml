@@ -1,0 +1,11 @@
+Received: from mail.example (mail.example [192.0.2.10]) by mx.acmemsp.example; Tue, 17 Nov 2026 10:15:00 +0700
+From: Dana Molar <dana.molar@acmedental.example>
+To: Acme MSP Support <support@acmemsp.example>
+Subject: Question about the Wi-Fi
+Date: Tue, 17 Nov 2026 10:15:00 +0700
+Message-ID: <0017-noauth@acmedental.example>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+What is the guest Wi-Fi password?

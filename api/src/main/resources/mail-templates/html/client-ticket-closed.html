@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{mail-templates/html/layout.html :: layout(~{::title}, ~{::#content})}">
+<head><title th:text="|Your request has been closed - ${supportName}|">Request closed</title></head>
+<body>
+<div id="content">
+  <p style="margin:0 0 16px;">Hello,</p>
+  <p style="margin:0 0 16px;">Your request <strong th:text="${ticketSubject}">Subject</strong> has now been closed, as we had marked it as resolved and did not hear back.</p>
+  <p style="margin:0 0 16px;">If you still need help, reply to this email and we will open a follow-up for you.</p>
+</div>
+</body>
+</html>

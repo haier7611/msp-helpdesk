@@ -1,0 +1,308 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: var(--control-size);
+  padding: 0 16px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.primary {
+  border-color: var(--color-brand);
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  font-weight: 600;
+  padding: 0 18px;
+}
+
+.primary:hover:not(:disabled) {
+  border-color: var(--color-brand-hover);
+  background: var(--color-brand-hover);
+}
+
+.secondary:hover:not(:disabled) {
+  background: var(--color-surface-subtle);
+}
+
+.danger {
+  border-color: var(--color-danger-border);
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.danger:hover:not(:disabled) {
+  background: var(--color-sla-breached-bg);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.error {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-danger);
+}
+
+.control {
+  min-height: var(--control-size);
+  width: 100%;
+  padding: 0 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 14px;
+}
+
+/* Single-line inputs and selects share one exact height, so they line up side by side
+   (Safari otherwise draws native selects about 34 px tall and ignores min-height). */
+input.control,
+select.control {
+  height: var(--control-size);
+}
+
+select.control {
+  appearance: none;
+  padding-right: 36px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--color-text-muted) 50%),
+    linear-gradient(135deg, var(--color-text-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 19px) 50%,
+    calc(100% - 14px) 50%;
+  background-size: 5px 5px;
+  background-repeat: no-repeat;
+}
+
+.control:disabled {
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.control[aria-invalid="true"] {
+  border-color: var(--color-danger);
+}
+
+.textarea {
+  padding: 12px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+/* A rendered <legend> sits in the fieldset's top border and leaves a gap in it (a UX
+   finding). A floated legend is not "rendered" into the border, so the legend becomes an
+   ordinary heading inside the box and the border stays closed. */
+.boxed {
+  padding: 12px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+
+.legend {
+  float: left;
+  width: 100%;
+  padding: 0;
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* The whole label row is the hit area: 32 px on fine pointers, 48 px on touch screens,
+   padded so the target reaches past the 18 px box itself. */
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--choice-size);
+  padding: 0 8px 0 0;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.choice input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--color-brand);
+  flex: none;
+  cursor: pointer;
+}
+
+/* Radios side by side (wrapping on narrow screens) instead of one per row. */
+.inline {
+  flex-direction: row;
+  flex-wrap: wrap;
+  column-gap: 20px;
+  row-gap: 0;
+}
+
+.inline > .legend,
+.inline > .hint {
+  flex: 0 0 100%;
+}
+
+/* Inputs sized to their content. The cap is on the field, so the label and hint wrap
+   to the same width; "full" (the default) fills the row. */
+.sizeXs {
+  width: 100%;
+  max-width: 7.5rem; /* ports, small numbers: about 8 characters */
+}
+
+.sizeSm {
+  width: 100%;
+  max-width: 12rem; /* selects, dates, times */
+}
+
+.sizeMd {
+  width: 100%;
+  max-width: 22rem; /* host names, email addresses, names */
+}
+
+.sizeFull {
+  width: 100%;
+}
+
+/* Fields of different widths on one line (e.g. Port + Security); wraps on narrow screens. */
+.fieldRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: flex-start;
+}
+
+.fieldRow > .field {
+  flex: 1 1 auto;
+}
+
+.fieldRow > .sizeXs,
+.fieldRow > .sizeSm {
+  flex: 0 1 auto;
+}
+
+/* One-line help with the detail behind a small info toggle. */
+.helpLine {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.helpText {
+  flex: 1;
+  min-width: 0;
+  padding-top: 4px;
+}
+
+.infoButton {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--info-size);
+  height: var(--info-size);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.infoButton:hover,
+.infoButton[aria-expanded="true"] {
+  background: var(--color-surface-subtle);
+  color: var(--color-text);
+}
+
+.helpDetail {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-subtle);
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+/* Rarely used fields under a collapsed "Advanced" (native <details>). */
+.advanced {
+  border-top: 1px solid var(--color-border);
+}
+
+.advanced > summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--control-size);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.advanced > summary::-webkit-details-marker {
+  display: none;
+}
+
+.advanced > summary::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.15s ease;
+}
+
+.advanced[open] > summary::before {
+  transform: rotate(45deg);
+}
+
+.advancedBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 4px 0 8px;
+}

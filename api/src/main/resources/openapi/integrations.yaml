@@ -1,0 +1,147 @@
+openapi: 3.1.0
+info:
+  title: Ticket System - integrations API and API keys
+  version: 0.1.0
+  description: >-
+    `/api/v1/integrations` is for
+    monitoring tools: `Authorization: Bearer tsk_<id>_<secret>`, no session, no CSRF, 60 requests a
+    minute per key, 256 KB per body, no HMAC. The key's organisation is the only organisation; the
+    body never chooses one. An API key can never read a ticket: there is no GET route. The admin
+    routes manage an organisation's keys (session + CSRF, admins only; creating a key needs
+    step-up). Errors are `{"error": code, "message": text}`. Checked against the registered
+    endpoints by IntegrationsOpenApiCoverageTest. Integrator guide: docs/45-integrations-api.md.
+servers:
+  - url: /
+tags:
+  - name: integrations
+  - name: admin-api-keys
+paths:
+  /api/v1/integrations/tickets:
+    post:
+      tags: [integrations]
+      summary: Raise or update an Alert ticket for the key's organisation
+      security:
+        - apiKey: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                externalId:
+                  type: string
+                  maxLength: 200
+                  description: >-
+                    Dedup key, shared by all keys of the organisation. A repeat while the ticket is
+                    not Closed adds a comment (Resolved reopens to Open); after Closed a linked
+                    follow-up ticket is created.
+                title: {type: string, maxLength: 250, description: Becomes the ticket subject (plain text)}
+                description: {type: string, description: HTML sanitised with the allow list, or plain text}
+                resolved:
+                  type: boolean
+                  default: false
+                  description: The alert has cleared - resolves the open ticket; ignored when there is none
+      responses:
+        "201": {$ref: "#/components/responses/Outcome"}
+        "200": {$ref: "#/components/responses/Outcome"}
+        "400": {$ref: "#/components/responses/Error"}
+        "401": {$ref: "#/components/responses/Error"}
+        "413": {$ref: "#/components/responses/Error"}
+        "429":
+          description: Over 60 requests a minute for this key (Retry-After header, seconds)
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+  /api/v1/admin/organisations/{organisationId}/api-keys:
+    get:
+      tags: [admin-api-keys]
+      summary: The organisation's keys (never the secret)
+      parameters: [{$ref: "#/components/parameters/OrganisationId"}]
+      responses:
+        "200":
+          description: Keys
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: "#/components/schemas/ApiKey"}}
+        "404": {$ref: "#/components/responses/Error"}
+    post:
+      tags: [admin-api-keys]
+      summary: Create a key (step-up); the full key is in this response only
+      parameters: [{$ref: "#/components/parameters/OrganisationId"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: {type: string, maxLength: 100}
+                expiresAt: {type: string, format: date-time, description: Optional, must be in the future}
+      responses:
+        "201":
+          description: Created (Cache-Control no-store)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  key: {$ref: "#/components/schemas/ApiKey"}
+                  secret: {type: string, example: tsk_ab12cd34_..., description: Shown once}
+        "400": {$ref: "#/components/responses/Error"}
+        "403": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/Error"}
+  /api/v1/admin/organisations/{organisationId}/api-keys/{keyId}:
+    delete:
+      tags: [admin-api-keys]
+      summary: Revoke a key at once (its tickets are left as they are)
+      parameters:
+        - {$ref: "#/components/parameters/OrganisationId"}
+        - {name: keyId, in: path, required: true, schema: {type: integer, format: int64}}
+      responses:
+        "200":
+          description: The revoked key
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/ApiKey"}
+        "404": {$ref: "#/components/responses/Error"}
+components:
+  securitySchemes:
+    apiKey: {type: http, scheme: bearer, bearerFormat: "tsk_<8 char id>_<43 char secret>"}
+  parameters:
+    OrganisationId: {name: organisationId, in: path, required: true, schema: {type: integer, format: int64}}
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+    Outcome:
+      description: What happened (201 for a new ticket or follow-up, 200 otherwise). No ticket content.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              reference: {type: [string, "null"], example: ACD-001}
+              ticketId: {type: [integer, "null"], format: int64}
+              result: {type: string, enum: [CREATED, UPDATED, REOPENED, RESOLVED, FOLLOW_UP_CREATED, IGNORED]}
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: {type: string}
+        message: {type: string}
+    ApiKey:
+      type: object
+      properties:
+        id: {type: integer, format: int64}
+        name: {type: string}
+        prefix: {type: string, example: tsk_ab12cd34}
+        createdAt: {type: string, format: date-time}
+        expiresAt: {type: [string, "null"], format: date-time}
+        lastUsedAt: {type: [string, "null"], format: date-time}
+        revokedAt: {type: [string, "null"], format: date-time}
+        status: {type: string, enum: [ACTIVE, EXPIRED, REVOKED]}

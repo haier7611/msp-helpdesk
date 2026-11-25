@@ -1,0 +1,210 @@
+openapi: 3.1.0
+info:
+  title: Ticket System - Admin - Customers
+  version: 0.1.0
+  description: |
+    Customers of every client organisation and the
+    admin actions on them. Admin only: agents (engineers) and customers get 403 from the
+    `/api/v1/admin` role gate, and the service checks the admin scope again. An agent's or admin's
+    id answers 404 here (they are managed in Admin - Agents). Session cookie plus the X-XSRF-TOKEN
+    header on every PUT and POST. Errors are `{"error": code, "message": text}`. Endpoints marked
+    "step-up" answer 403 `step_up_required` unless the session stepped up in the last 10 minutes.
+    Every action is audit-logged without the customer's name or address. Checked against the
+    registered endpoints by AdminCustomerIntegrationTest.
+servers:
+  - url: /
+tags:
+  - name: admin-customers
+paths:
+  /api/v1/admin/customers:
+    get:
+      tags: [admin-customers]
+      summary: Customers of every organisation, one page
+      parameters:
+        - {name: q, in: query, schema: {type: string, maxLength: 200}, description: Part of the name or email}
+        - {name: organisationId, in: query, schema: {type: integer, format: int64}}
+        - name: status
+          in: query
+          description: Omitted = everyone except erased customers
+          schema: {type: string, enum: [ACTIVE, INVITED, DEACTIVATED, ERASED]}
+        - name: sort
+          in: query
+          description: name (default), organisation, or lastSignIn (newest first, never signed in last)
+          schema: {type: string, enum: [name, organisation, lastSignIn]}
+        - {name: page, in: query, schema: {type: integer, minimum: 0, default: 0}}
+        - {name: limit, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
+      responses:
+        "200":
+          description: The page and the total
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: {type: array, items: {$ref: "#/components/schemas/CustomerSummary"}}
+                  total: {type: integer, format: int64}
+        "400": {description: "`invalid_request` (unknown status or sort, search over 200 characters)"}
+        "403": {description: Not an admin}
+  /api/v1/admin/customers/{id}:
+    get:
+      tags: [admin-customers]
+      summary: One customer, for the detail panel
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "200":
+          description: The customer
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CustomerDetail"}
+        "403": {description: Not an admin}
+        "404": {description: No such customer}
+  /api/v1/admin/customers/{id}/invitation:
+    post:
+      tags: [admin-customers]
+      summary: (Re)send the portal invitation (link valid 7 days, no code) to an invited customer
+      description: An older unused link stops working. Logged as INVITATION_CREATED.
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "202":
+          description: Sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  expiresAt: {type: string, format: date-time}
+        "403": {description: Not an admin}
+        "404": {description: No such customer}
+        "409": {description: "`not_invited` (already active, or deactivated) or `erased`"}
+  /api/v1/admin/customers/{id}/password-reset:
+    post:
+      tags: [admin-customers]
+      summary: Email an active customer a password reset link (15 minutes)
+      description: Logged as PASSWORD_RESET_REQUESTED with reason `admin`.
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "204": {description: Sent}
+        "403": {description: Not an admin}
+        "404": {description: No such customer}
+        "409": {description: "`not_active` or `erased`"}
+  /api/v1/admin/customers/{id}/sign-out-everywhere:
+    post:
+      tags: [admin-customers]
+      summary: End every session of the customer (step-up)
+      description: Bumps security_version. Logged as CUSTOMER_SIGNED_OUT_EVERYWHERE.
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "204": {description: Signed out}
+        "403": {description: "Not an admin, or `step_up_required`"}
+        "404": {description: No such customer}
+        "409": {description: "`erased`"}
+  /api/v1/admin/customers/{id}/deactivate:
+    post:
+      tags: [admin-customers]
+      summary: Deactivate an active or invited customer
+      description: |
+        They cannot sign in, every unused link is revoked, every session ends, and ticket email
+        stops. Their tickets stay. An active customer gets the "account deactivated" notice.
+        Logged as CUSTOMER_DEACTIVATED (`status` = the status before).
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "200":
+          description: The customer after the change
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CustomerDetail"}
+        "403": {description: Not an admin}
+        "404": {description: No such customer}
+        "409": {description: "`not_active` (already deactivated) or `erased`"}
+  /api/v1/admin/customers/{id}/reactivate:
+    post:
+      tags: [admin-customers]
+      summary: Reactivate a deactivated customer (ACTIVE with a password, otherwise INVITED)
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "200":
+          description: The customer after the change
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/CustomerDetail"}
+        "403": {description: Not an admin}
+        "404": {description: No such customer}
+        "409": {description: "`not_deactivated` or `erased`"}
+  /api/v1/admin/customers/{id}/organisation:
+    put:
+      tags: [admin-customers]
+      summary: Move the customer to another organisation (step-up)
+      description: |
+        Their sessions end (security_version). They stop being a participant of every ticket of
+        another organisation (by account or by address; each removal is a ticket timeline line).
+        Tickets they raised stay with the old organisation. Logged as CUSTOMER_MOVED
+        (`organisation`, `old_organisation`, `tickets`).
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organisationId]
+              properties:
+                organisationId: {type: integer, format: int64}
+      responses:
+        "200":
+          description: Moved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  customer: {$ref: "#/components/schemas/CustomerDetail"}
+                  participantTicketsRemoved: {type: integer}
+        "400": {description: "`invalid_request` (no organisation) or `unknown_organisation`"}
+        "403": {description: "Not an admin, or `step_up_required`"}
+        "404": {description: No such customer}
+        "409": {description: "`same_organisation` or `erased`"}
+  /api/v1/admin/users/{id}/erase:
+    post:
+      tags: [admin-customers]
+      summary: Erase (pseudonymise) a user's personal data (step-up, irreversible)
+      description: |
+        The existing erase endpoint, used by the Admin - Customers erase dialog (typed
+        confirmation of the email in the UI). Logged as USER_ERASED (role only).
+      parameters: [{$ref: "#/components/parameters/Id"}]
+      responses:
+        "204": {description: Erased}
+        "400": {description: "`own_account`"}
+        "403": {description: "Not an admin, or `step_up_required`"}
+        "404": {description: No such user}
+        "409": {description: "`already_erased` or `deactivate_first` (agents)"}
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: {type: integer, format: int64}
+  schemas:
+    CustomerSummary:
+      type: object
+      properties:
+        id: {type: integer, format: int64}
+        name: {type: string, description: '"Former user" once erased'}
+        email: {type: [string, "null"], description: null once erased}
+        organisationId: {type: integer, format: int64}
+        organisationName: {type: string}
+        status: {type: string, enum: [ACTIVE, INVITED, DEACTIVATED, ERASED]}
+        lastSignInAt: {type: [string, "null"], format: date-time, description: Within the audit log's 1 year}
+        createdAt: {type: string, format: date-time}
+    CustomerDetail:
+      allOf:
+        - $ref: "#/components/schemas/CustomerSummary"
+        - type: object
+          properties:
+            passwordSet: {type: boolean}
+            microsoftLinked: {type: boolean}
+            ticketsRaised: {type: integer, format: int64, description: Tickets with this customer as reporter}
+            invitationExpiresAt:
+              type: [string, "null"]
+              format: date-time
+              description: End of the unused invitation link while INVITED; null when none was sent

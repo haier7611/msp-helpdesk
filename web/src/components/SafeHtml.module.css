@@ -1,0 +1,33 @@
+.body {
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+}
+
+.body p {
+  margin: 0 0 8px;
+}
+
+.body p:last-child {
+  margin-bottom: 0;
+}
+
+.body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+.body blockquote {
+  margin: 8px 0;
+  padding-left: 12px;
+  border-left: 3px solid var(--color-border-strong);
+  color: var(--color-text-secondary);
+}
+
+.body pre {
+  overflow-x: auto;
+}
+
+.body a {
+  color: var(--color-link);
+}

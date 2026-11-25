@@ -1,0 +1,33 @@
+Received: from mail.example (mail.example [192.0.2.10]) by mx.acmemsp.example; Tue, 17 Nov 2026 10:15:00 +0700
+Authentication-Results: mx.acmemsp.example;
+ spf=pass smtp.mailfrom=acmedental.example;
+ dkim=pass header.d=acmedental.example header.s=sel1;
+ dmarc=pass (p=quarantine dis=none) header.from=acmedental.example
+From: Dana Molar <dana.molar@acmedental.example>
+To: Acme MSP Support <support@acmemsp.example>
+Subject: Re: [ACD-042] Printer offline in reception
+Date: Tue, 17 Nov 2026 10:15:00 +0700
+Message-ID: <A1B2C3D4-0004-4E5F-8899-AABBCCDDEEFF@acmedental.example>
+MIME-Version: 1.0
+In-Reply-To: <5f0c2a9e-1111-4c1e-9a52-0c3c1d6b7a01@acmemsp.example>
+References: <first-0001@acmedental.example> <5f0c2a9e-1111-4c1e-9a52-0c3c1d6b7a01@acmemsp.example>
+X-Mailer: Apple Mail (2.3826)
+Content-Type: multipart/alternative; boundary="alt-b1"
+
+--alt-b1
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+It works again.
+
+Sent from my iPhone
+
+> On 17 Nov 2026, at 09:12, Acme MSP Support <support@acmemsp.example> wrote:
+>
+> Please restart the printer.
+--alt-b1
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: 8bit
+
+<html><head></head><body dir="auto"><div dir="ltr">It works again.</div><div dir="ltr"><br></div><div dir="ltr">Sent from my iPhone</div><div dir="ltr"><br>On 17 Nov 2026, at 09:12, Acme MSP Support &lt;support@acmemsp.example&gt; wrote:<br><br></div><blockquote type="cite"><div dir="ltr">Please restart the printer.</div></blockquote></body></html>
+--alt-b1--

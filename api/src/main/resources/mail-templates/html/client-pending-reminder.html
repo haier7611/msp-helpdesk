@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{mail-templates/html/layout.html :: layout(~{::title}, ~{::#content})}">
+<head><title th:text="|We are waiting for your reply - ${supportName}|">Waiting for your reply</title></head>
+<body>
+<div id="content">
+  <p style="margin:0 0 16px;">Hello,</p>
+  <p style="margin:0 0 16px;">We asked you a question about your request <strong th:text="${ticketSubject}">Subject</strong> and have not heard back yet.</p>
+  <p style="margin:0 0 16px;">Please reply to this email with the information we asked for, and we will carry on.</p>
+  <p style="margin:0 0 16px;">If you no longer need help, you do not need to do anything.</p>
+</div>
+</body>
+</html>

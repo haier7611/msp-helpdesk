@@ -1,0 +1,10 @@
+Hello [(${recipientName})],
+
+You have been invited to join [(${supportName})] as an agent.
+
+Open this link to set your password:
+[(${link})]
+
+Do not forward this email: anyone with the link can accept the invitation until it expires.
+
+This link works once and expires in [(${validFor})].

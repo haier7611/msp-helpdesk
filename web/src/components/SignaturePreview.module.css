@@ -1,0 +1,75 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.heading {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.toggle {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.toggleButton {
+  min-height: var(--control-size);
+  padding: 0 12px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.toggleButton[aria-pressed="true"] {
+  border-color: var(--color-brand);
+  background: var(--color-brand-tint);
+  color: var(--color-brand-strong-text);
+  font-weight: 600;
+}
+
+/* The frame always looks like an email on white, in both themes. */
+.frame {
+  padding: 28px;
+  background: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: #000000;
+  font-family: var(--font-email);
+  overflow-wrap: anywhere;
+}
+
+.caption {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: #5b6270;
+}
+
+.signature {
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.signature img {
+  max-width: 100%;
+}
+
+.text {
+  margin: 0;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}

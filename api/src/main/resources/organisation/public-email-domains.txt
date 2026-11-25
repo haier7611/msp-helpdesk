@@ -1,0 +1,79 @@
+# Public (free or consumer ISP) email domains. These can never be an organisation's verified
+# domain: anyone can get an address on them, so a match would put strangers'
+# mail into a client's tickets. Subdomains are refused too (e.g. eu.example-public.com).
+# One lower-case domain per line; '#' starts a comment. Keep sorted within each group.
+# Maintained list: add domains as they turn up in triage. Last reviewed 2026-11-18.
+
+# Google
+gmail.com
+googlemail.com
+
+# Microsoft
+hotmail.co.uk
+hotmail.com
+hotmail.fr
+hotmail.it
+live.co.uk
+live.com
+msn.com
+outlook.com
+outlook.sg
+passport.com
+
+# Yahoo / AOL
+aol.com
+rocketmail.com
+yahoo.co.in
+yahoo.co.jp
+yahoo.co.uk
+yahoo.com
+yahoo.com.au
+yahoo.com.sg
+yahoo.com.vn
+yahoo.fr
+ymail.com
+
+# Apple
+icloud.com
+mac.com
+me.com
+
+# Privacy and independent providers
+fastmail.com
+gmx.com
+gmx.de
+gmx.net
+hey.com
+mail.com
+pm.me
+proton.me
+protonmail.com
+tuta.io
+tutanota.com
+zoho.com
+zohomail.com
+
+# Regional and ISP mail
+126.com
+163.com
+btinternet.com
+comcast.net
+daum.net
+free.fr
+hanmail.net
+laposte.net
+libero.it
+mail.ru
+naver.com
+orange.fr
+qq.com
+rediffmail.com
+sbcglobal.net
+seznam.cz
+sina.com
+singnet.com.sg
+t-online.de
+verizon.net
+web.de
+yandex.com
+yandex.ru

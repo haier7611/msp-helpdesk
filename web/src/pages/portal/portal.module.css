@@ -1,0 +1,99 @@
+/* Customer portal: bits the shared page styles do not have. */
+
+.hiddenInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.fileList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fileItem {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.fileName {
+  flex: 1 1 160px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 500;
+}
+
+.removeButton {
+  min-height: var(--control-size);
+}
+
+.successPanel {
+  flex: 0 1 560px;
+  max-width: 560px;
+}
+
+.successHeading {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  color: var(--color-success-strong);
+  outline: none;
+}
+
+.accountWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.accountForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.readOnly {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 16px;
+}
+
+.readOnly dt {
+  font-weight: 600;
+}
+
+.readOnly dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Request type choices: name with its helper text underneath. */
+.typeChoice {
+  align-items: flex-start;
+  padding: 6px 0;
+}
+
+.typeChoice input {
+  margin-top: 2px;
+  flex: none;
+}
+
+.typeText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}

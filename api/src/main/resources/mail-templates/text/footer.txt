@@ -1,0 +1,1 @@
+This is an automatic message from [(${supportName})]. If you were not expecting it, you can ignore it.

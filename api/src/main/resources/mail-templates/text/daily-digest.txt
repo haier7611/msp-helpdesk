@@ -1,0 +1,8 @@
+Hello [(${recipientName})],
+
+[(${summary})]
+
+[(${items})]
+
+Open the queue:
+[(${link})]

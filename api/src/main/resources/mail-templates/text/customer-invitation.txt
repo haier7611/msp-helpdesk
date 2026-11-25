@@ -1,0 +1,8 @@
+Hello [(${recipientName})],
+
+[(${supportName})] has created an account for you at [(${organisationName})], so you can raise support tickets online.
+
+Open this link to set your password:
+[(${link})]
+
+This link works once and expires in [(${validFor})].

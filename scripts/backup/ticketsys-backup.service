@@ -1,0 +1,11 @@
+[Unit]
+Description=Ticket System nightly backup (pg_dump + attachments)
+Requires=docker.service
+After=docker.service
+OnFailure=ticketsys-backup-failed.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/ticketsys-backup
+Nice=10
+IOSchedulingClass=idle

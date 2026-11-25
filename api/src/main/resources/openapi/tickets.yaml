@@ -1,0 +1,1016 @@
+openapi: 3.1.0
+info:
+  title: Ticket System - tickets and agent UI API
+  version: 0.1.0
+  description: |
+    Agent and portal ticket endpoints. Session cookie plus the
+    X-XSRF-TOKEN header on every POST (see /api/v1/auth). `/api/v1/agent` is agents and admins only,
+    `/api/v1/portal` customers only (403 otherwise). A ticket or attachment of an organisation the
+    caller may not see answers 404 with the same body as an id that does not exist. Errors are
+    `{"error": code, "message": text}`. Internal notes appear only in the agent ticket detail.
+    This file is checked against the registered endpoints by OpenApiCoverageTest.
+servers:
+  - url: /
+tags:
+  - name: agent-tickets
+  - name: agent-attachments
+  - name: agent-ui
+  - name: portal
+paths:
+  /api/v1/agent/request-types:
+    get:
+      tags: [agent-tickets]
+      summary: Request types with their starting priority
+      responses:
+        "200":
+          description: List
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: "#/components/schemas/RequestTypeOption"}
+  /api/v1/agent/tickets:
+    get:
+      tags: [agent-tickets]
+      summary: The queue, newest first (organisations the caller works, plus triage)
+      parameters:
+        - {name: status, in: query, schema: {$ref: "#/components/schemas/Status"}}
+        - {name: organisationId, in: query, schema: {type: integer, format: int64}}
+        - {name: triage, in: query, schema: {type: boolean, default: false}}
+        - {name: assignee, in: query, description: "me, none or a user id", schema: {type: string}}
+        - {name: includeClosed, in: query, schema: {type: boolean, default: false}}
+        - {name: breaching, in: query, description: "Only tickets about to breach (80%) or breached", schema: {type: boolean, default: false}}
+        - {name: before, in: query, description: "id cursor: tickets with a smaller id", schema: {type: integer, format: int64}}
+        - {name: limit, in: query, schema: {type: integer, default: 50, maximum: 100}}
+        - {$ref: "#/components/parameters/QueueSearch"}
+        - {$ref: "#/components/parameters/QueuePriority"}
+        - {$ref: "#/components/parameters/QueueExcludeTriage"}
+        - {$ref: "#/components/parameters/QueueSort"}
+        - {name: page, in: query, description: "0-based page (offset = page * limit); ignored with before", schema: {type: integer, default: 0, minimum: 0}}
+      responses:
+        "400": {$ref: "#/components/responses/Error"}
+        "200":
+          description: Rows (with the names; the X-Total-Count header carries the total)
+          headers:
+            X-Total-Count:
+              description: Tickets matching the filter (paging ignored)
+              schema: {type: integer, format: int64}
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: "#/components/schemas/TicketSummary"}
+    post:
+      tags: [agent-tickets]
+      summary: New ticket on behalf of a contact (source AGENT)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organisationId, reporterUserId, requestTypeId, subject]
+              properties:
+                organisationId: {type: integer, format: int64}
+                reporterUserId: {type: integer, format: int64, description: A customer of that organisation}
+                requestTypeId: {type: integer, format: int64}
+                priority: {$ref: "#/components/schemas/Priority"}
+                impact: {$ref: "#/components/schemas/Impact"}
+                urgency: {$ref: "#/components/schemas/Urgency"}
+                subject: {type: string, maxLength: 250}
+                descriptionHtml: {type: string, description: Sanitised on save (allow list in docs/35-security.md)}
+                attachmentIds: {type: array, items: {type: string, format: uuid}}
+                assigneeUserId: {type: integer, format: int64}
+      responses:
+        "201": {$ref: "#/components/responses/Created"}
+        "400": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/agent/tickets/{id}:
+    get:
+      tags: [agent-tickets]
+      summary: Ticket detail (public comments, internal notes, system entries, history - typed lists)
+      parameters: [{$ref: "#/components/parameters/TicketId"}]
+      responses:
+        "200":
+          description: Detail
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/TicketDetail"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/agent/tickets/{id}/sla:
+    get:
+      tags: [agent-tickets]
+      summary: "The live SLA panel alone (the ticket page re-syncs with it every few minutes). Agent-only; 404 for organisations the caller does not work. Triage tickets have a panel too (default policy and hours in the MSP timezone)."
+      parameters: [{$ref: "#/components/parameters/TicketId"}]
+      responses:
+        "200":
+          description: Panel
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/SlaPanel"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/agent/tickets/by-reference/{reference}:
+    get:
+      tags: [agent-tickets]
+      summary: Resolve a reference or alias (any case, missing zeros) to its ticket
+      parameters:
+        - {name: reference, in: path, required: true, schema: {type: string}, example: nwd-1}
+      responses:
+        "200":
+          description: Resolved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ticketId: {type: integer, format: int64}
+                  reference: {type: string, description: Current primary}
+                  matched: {type: string}
+                  alias: {type: boolean}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/agent/tickets/{id}/status:
+    post:
+      tags: [agent-tickets]
+      summary: Set a status by hand
+      description: >-
+        CLOSED needs closeReason (SPAM, RESOLVED_NO_FOLLOW_UP, CLIENT_CANCELLED,
+        NO_RESPONSE or OTHER) and, for OTHER, closeNote of 3-500 characters; otherwise 400
+        close_reason_required / close_note_required. DUPLICATE answers 400 use_mark_duplicate (use
+        duplicate-of). Both fields are ignored for any other status.
+      parameters: [{$ref: "#/components/parameters/TicketId"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status: {$ref: "#/components/schemas/Status"}
+                closeReason: {type: [string, "null"], enum: [SPAM, RESOLVED_NO_FOLLOW_UP, CLIENT_CANCELLED, NO_RESPONSE, OTHER, DUPLICATE, null]}
+                closeNote: {type: [string, "null"], minLength: 3, maxLength: 500}
+      responses:
+        "200":
+          description: New status
+          content:
+            application/json:
+              schema: {type: object, properties: {status: {$ref: "#/components/schemas/Status"}}}
+        "400": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Error"}
+  /api/v1/agent/tickets/{id}/priority:
+    post:
+      tags: [agent-tickets]
+      summary: Change priority (agents only, F6)
+      parameters: [{$ref: "#/components/parameters/TicketId"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, properties: {priority: {$ref: "#/components/schemas/Priority"}}}
+      responses:
+        "204": {description: Changed}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Error"}
+  /api/v1/agent/tickets/{id}/request-type:
+    post:
+      tags: [agent-tickets]
+      summary: Change request type
+      parameters: [{$ref: "#/components/parameters/TicketId"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, properties: {requestTypeId: {type: integer, format: int64}}}
+      responses:
+        "204": {description: Changed}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/agent/tickets/{id}/assignee:
+    post:
+      tags: [agent-tickets]
+      summary: Assign (F8), unassign with null; assigning yourself picks a New ticket up (Open)
+      parameters: [{$ref: "#/components/parameters/TicketId"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, properties: {assigneeUserId: {type: [integer, "null"], format: int64}}}
+      responses:
+        "204": {description: Changed}
+        "400": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/agent/tickets/{id}/organisation:
+    post:
+      tags: [agent-tickets]
+      summary: Assign a triage ticket to an organisation or move it; new primary reference, old ones stay aliases
+      parameters: [{$ref: "#/components/parameters/TicketId"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {type: object, properties: {organisationId: {type: integer, format: int64}}}
+      responses:
+        "200":
+          description: The new primary reference
+          content:
+            application/json:
+              schema: {type: object, properties: {reference: {type: string}}}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Error"}
+  /api/v1/agent/tickets/{id}/public-replies:
+    post:
+      tags: [agent-tickets]
+      summary: Public reply (emailed to the client); optional status in the same action
+      description: >-
+        The reply is emailed To the reporter and CC the confirmed participants, or, when `cc` is
+        given (the composer's CC editor), CC exactly `cc.recipients`. Every CC rule is
+        checked on the server: valid plain addresses; at most 10 on a reply and at most 10
+        participants on a ticket when someone joins; a contact of the ticket's organisation or an
+        address on its verified domains is added at once; any other address must also be listed
+        in `confirmExternal` (400 `external_cc_unconfirmed` otherwise, naming the organisation the
+        agent works on); another organisation's contact is answered exactly like such an outside
+        address (so the answer never reveals an account elsewhere) and, once confirmed, is an
+        outside participant of this ticket (emailed, never linked to their account); an agent
+        or admin account, a deactivated contact of the ticket's organisation or a support mailbox
+        is refused (400 `cc_not_allowed`, no organisation named); more than 10 is 400
+        `cc_limit`. Public replies and internal notes share a per-agent cap (default 30 a minute
+        and 300 an hour, `app.rate-limits.agent-messages`): over it 429 `too_many_requests` with
+        Retry-After and nothing is stored. With
+        `keepOnFutureReplies` true (the default) participants left out are removed from the ticket
+        and added ones join it; false changes this reply only. Every change is an agent-only
+        timeline line (PARTICIPANT_ADDED / PARTICIPANT_REMOVED with the agent as actor). Not on
+        triage tickets (400).
+      parameters: [{$ref: "#/components/parameters/TicketId"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bodyHtml: {type: string}
+                attachmentIds: {type: array, items: {type: string, format: uuid}}
+                thenStatus: {$ref: "#/components/schemas/Status"}
+                cc:
+                  type: object
+                  description: CC choice; omit to CC the confirmed participants.
+                  properties:
+                    recipients:
+                      type: array
+                      maxItems: 10
+                      items: {type: string, format: email, maxLength: 254}
+                      description: the final CC list of this reply (the reporter is ignored)
+                    keepOnFutureReplies:
+                      type: boolean
+                      default: true
+                      description: true = the ticket's participants change too; false = this reply only
+                    confirmExternal:
+                      type: array
+                      items: {type: string, format: email, maxLength: 254}
+                      description: addresses outside the organisation the agent confirmed
+      responses:
+        "201": {$ref: "#/components/responses/IdCreated"}
+        "400": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Error"}
+        "429": {$ref: "#/components/responses/Error"}
+  /api/v1/agent/tickets/{id}/cc-check:
+    post:
+      tags: [agent-tickets]
+      summary: How an address would be treated as a CC on this ticket (composer early check)
+      description: >-
+        Read-only check for the composer's CC editor, with the same rules as `public-replies`:
+        `allowed` (already in CC, a live contact of the ticket's organisation, or on its verified
+        domains), `external` (outside, including another organisation's contact; needs
+        `confirmExternal`), `staff` (an agent or admin account, never a client CC), `not_allowed`
+        (a deactivated contact of the ticket's organisation or a support mailbox). Only
+        the reason code is returned, never a name or organisation. Agent-scoped like the ticket
+        (404 for an organisation the agent does not work on); an invalid address is 400; not on
+        triage tickets (400).
+      parameters: [{$ref: "#/components/parameters/TicketId"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email: {type: string, maxLength: 254}
+      responses:
+        "200":
+          description: The reason code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result: {type: string, enum: [allowed, external, staff, not_allowed]}
+        "400": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/agent/tickets/{id}/internal-notes:
+    post:
+      tags: [agent-tickets]
+      summary: Internal note (supporters only; allowed on Closed tickets)
+      description: >-
+        Counts towards the same per-agent cap as public replies (429 `too_many_requests` with
+        Retry-After when over it; nothing is stored).
+      parameters: [{$ref: "#/components/parameters/TicketId"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bodyHtml: {type: string}
+                attachmentIds: {type: array, items: {type: string, format: uuid}}
+      responses:
+        "201": {$ref: "#/components/responses/IdCreated"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "429": {$ref: "#/components/responses/Error"}
+  /api/v1/agent/tickets/{id}/duplicate-of:
+    post:
+      tags: [agent-tickets]
+      summary: Mark as duplicate of another ticket of the same organisation (closes this one, no client email)
+      parameters: [{$ref: "#/components/parameters/TicketId"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/TicketTarget"}
+      responses:
+        "200":
+          description: The final target's id
+          content:
+            application/json:
+              schema: {type: object, properties: {id: {type: integer, format: int64}}}
+        "400": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Error"}
+  /api/v1/agent/tickets/{id}/links:
+    post:
+      tags: [agent-tickets]
+      summary: Link a related ticket of the same organisation (both ways, neither closed)
+      parameters: [{$ref: "#/components/parameters/TicketId"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/TicketTarget"}
+      responses:
+        "204": {description: Linked}
+        "400": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/agent/tickets/{id}/follow-ups:
+    post:
+      tags: [agent-tickets]
+      summary: Start a follow-up of a Closed ticket (F4)
+      parameters: [{$ref: "#/components/parameters/TicketId"}]
+      responses:
+        "201": {$ref: "#/components/responses/Created"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {$ref: "#/components/responses/Error"}
+  /api/v1/agent/attachments:
+    post:
+      tags: [agent-attachments]
+      summary: Upload a file (pending for 24 h until a comment uses it; max 20 MB; SVG refused; images re-encoded)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: {type: object, properties: {file: {type: string, format: binary}}}
+      responses:
+        "201":
+          description: Pending upload
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: {type: string, format: uuid}
+                  filename: {type: string}
+                  size: {type: integer, format: int64}
+                  contentType: {type: string}
+                  image: {type: boolean}
+                  expiresAt: {type: string, format: date-time}
+        "400": {$ref: "#/components/responses/Error"}
+        "413": {$ref: "#/components/responses/Error"}
+  /api/v1/agent/attachments/{id}:
+    get:
+      tags: [agent-attachments]
+      summary: Download (nosniff, CSP sandbox; non-images as application/octet-stream attachments)
+      parameters: [{$ref: "#/components/parameters/AttachmentId"}]
+      responses:
+        "200": {description: File bytes}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/agent/attachments/{id}/thumbnail:
+    get:
+      tags: [agent-attachments]
+      summary: Thumbnail of an image (at most 320 px)
+      parameters: [{$ref: "#/components/parameters/AttachmentId"}]
+      responses:
+        "200": {description: Image bytes}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/portal/request-types:
+    get:
+      tags: [portal]
+      summary: Request types for the New ticket form ("Alert" hidden), in display order
+      responses:
+        "200":
+          description: List
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: {type: integer, format: int64}
+                    name: {type: string}
+                    description: {type: [string, "null"], maxLength: 200, description: Short helper text shown under the name}
+  /api/v1/portal/attachments:
+    post:
+      tags: [portal]
+      summary: Upload a file for the New ticket form
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema: {type: object, properties: {file: {type: string, format: binary}}}
+      responses:
+        "201":
+          description: Pending upload (no URL - customers cannot download)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id: {type: string, format: uuid}
+                  filename: {type: string}
+                  size: {type: integer, format: int64}
+        "400": {$ref: "#/components/responses/Error"}
+        "413": {$ref: "#/components/responses/Error"}
+  /api/v1/portal/tickets:
+    post:
+      tags: [portal]
+      summary: Raise a ticket for your own organisation; answers only with the reference
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [requestTypeId, subject, descriptionHtml, impact, urgency]
+              description: >-
+                Organisation, reporter, priority and status are never read from the body:
+                they come from the session or the request type. Queues the "ticket created"
+                confirmation email (client email matrix).
+              properties:
+                requestTypeId: {type: integer, format: int64}
+                subject: {type: string, maxLength: 250}
+                descriptionHtml: {type: string, description: Must contain text; sanitised on save}
+                impact: {$ref: "#/components/schemas/Impact"}
+                urgency: {$ref: "#/components/schemas/Urgency"}
+                attachmentIds: {type: array, items: {type: string, format: uuid}}
+                idempotencyKey:
+                  type: string
+                  format: uuid
+                  description: One random key per form; a repeat answers with the first reference
+      responses:
+        "201":
+          description: Received (also for a repeat of the same idempotencyKey)
+          content:
+            application/json:
+              schema: {type: object, properties: {reference: {type: string, example: NWD-001}}}
+        "400": {$ref: "#/components/responses/Error"}
+  /api/v1/agent/tickets/export:
+    get:
+      tags: [agent-tickets]
+      summary: CSV of the filtered queue - same query as the list, at most 10,000 rows, audit-logged (QUEUE_EXPORTED)
+      parameters:
+        - {name: status, in: query, schema: {$ref: "#/components/schemas/Status"}}
+        - {name: organisationId, in: query, schema: {type: integer, format: int64}}
+        - {name: triage, in: query, schema: {type: boolean, default: false}}
+        - {name: assignee, in: query, description: "me, none or a user id", schema: {type: string}}
+        - {name: includeClosed, in: query, schema: {type: boolean, default: false}}
+        - {$ref: "#/components/parameters/QueueSearch"}
+        - {$ref: "#/components/parameters/QueuePriority"}
+        - {$ref: "#/components/parameters/QueueExcludeTriage"}
+        - {$ref: "#/components/parameters/QueueSort"}
+      responses:
+        "200":
+          description: |
+            text/csv (UTF-8), Content-Disposition attachment tickets-YYYY-MM-DD.csv. Columns: Reference,
+            Organisation, Subject, Status, Priority, Request type, Assignee, Reporter, Source, Created,
+            Updated, First response time, Resolution time, SLA met, Close reason (the
+            reason label of a closed ticket, "Other - <note>" for Other, empty otherwise).
+            Cells starting with = + - @ tab or CR get a leading apostrophe.
+          headers:
+            X-Export-Truncated: {description: "true when capped at 10,000 rows", schema: {type: string}}
+          content:
+            text/csv:
+              schema: {type: string}
+        "400": {$ref: "#/components/responses/Error"}
+  /api/v1/agent/tickets/{id}/triage-options:
+    get:
+      tags: [agent-tickets]
+      summary: What the triage dialog may offer - the domain tick is never offered for public or already-verified domains
+      parameters: [{$ref: "#/components/parameters/TicketId"}]
+      responses:
+        "200":
+          description: Options
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  senderEmail: {type: [string, "null"]}
+                  senderDomain: {type: [string, "null"]}
+                  domainOffered: {type: boolean}
+                  contactExists: {type: boolean}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {description: "not_in_triage", content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
+  /api/v1/agent/tickets/{id}/triage-assignment:
+    post:
+      tags: [agent-tickets]
+      summary: Assign a triage ticket to an organisation with the optional remember ticks (one transaction, audit-logged)
+      parameters: [{$ref: "#/components/parameters/TicketId"}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organisationId]
+              properties:
+                organisationId: {type: integer, format: int64}
+                saveContact: {type: boolean, description: Save the sender as a contact of the organisation and make them the reporter}
+                addDomain: {type: boolean, description: "Add the sender's domain as a verified domain (refused for public domains)"}
+      responses:
+        "200":
+          description: New primary reference (the TRI- one stays an alias)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reference: {type: string}
+                  contactId: {type: [integer, "null"], format: int64}
+        "400": {description: "invalid_request or public_domain", content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {description: "not_in_triage, domain_taken or contact_exists", content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
+  /api/v1/agent/tickets/{ticketId}/saved-replies/{replyId}/render:
+    post:
+      tags: [agent-ui]
+      summary: A saved reply with its placeholders filled for this ticket (values HTML-escaped)
+      description: "Placeholders: {client_first_name}, {client_name}, {ticket_ref}, {organisation_name}, {agent_name}; others are left as typed."
+      parameters:
+        - {name: ticketId, in: path, required: true, schema: {type: integer, format: int64}}
+        - {name: replyId, in: path, required: true, schema: {type: integer, format: int64}}
+      responses:
+        "200":
+          description: Rendered
+          content:
+            application/json:
+              schema: {type: object, properties: {bodyHtml: {type: string}}}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/agent/saved-replies:
+    get:
+      tags: [agent-ui]
+      summary: Shared saved replies plus the caller's personal ones, by title
+      responses:
+        "200":
+          description: List
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: "#/components/schemas/SavedReply"}}
+    post:
+      tags: [agent-ui]
+      summary: New personal saved reply
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/SavedReplyInput"}
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/SavedReply"}
+        "400": {$ref: "#/components/responses/Error"}
+  /api/v1/agent/saved-replies/{id}:
+    put:
+      tags: [agent-ui]
+      summary: "Edit one of the caller's personal saved replies (404 for shared or someone else's)"
+      parameters: [{name: id, in: path, required: true, schema: {type: integer, format: int64}}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/SavedReplyInput"}
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/SavedReply"}
+        "400": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/NotFound"}
+    delete:
+      tags: [agent-ui]
+      summary: "Delete one of the caller's personal saved replies"
+      parameters: [{name: id, in: path, required: true, schema: {type: integer, format: int64}}]
+      responses:
+        "204": {description: Deleted}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/agent/supporters:
+    get:
+      tags: [agent-ui]
+      summary: Active supporters who may work the organisation (assignee picker); all active supporters without organisationId
+      parameters:
+        - {name: organisationId, in: query, schema: {type: integer, format: int64}}
+      responses:
+        "200":
+          description: List, by name
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id: {type: integer, format: int64}
+                    name: {type: string}
+                    email: {type: string}
+                    outOfOffice: {type: boolean, description: "My settings - Out of office is on"}
+                    outOfOfficeUntil: {type: [string, "null"], format: date}
+        "404": {$ref: "#/components/responses/NotFound"}
+  /api/v1/agent/contacts:
+    get:
+      tags: [agent-ui]
+      summary: Contacts (customers, active or invited) of the organisations the caller works
+      parameters:
+        - {name: q, in: query, description: Name or email contains (max 200), schema: {type: string}}
+        - {name: organisationId, in: query, schema: {type: integer, format: int64}}
+        - {name: page, in: query, schema: {type: integer, default: 0, minimum: 0}}
+        - {name: limit, in: query, schema: {type: integer, default: 50, maximum: 100}}
+      responses:
+        "200":
+          description: One page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items: {type: array, items: {$ref: "#/components/schemas/Contact"}}
+                  total: {type: integer, format: int64}
+        "404": {$ref: "#/components/responses/NotFound"}
+    post:
+      tags: [agent-ui]
+      summary: New contact (status INVITED, cannot sign in until invited); optional invitation (audit CONTACT_CREATED)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [organisationId, name, email]
+              properties:
+                organisationId: {type: integer, format: int64}
+                name: {type: string, maxLength: 200}
+                email: {type: string, maxLength: 320}
+                invite: {type: boolean, default: false}
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Contact"}
+        "400": {$ref: "#/components/responses/Error"}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {description: "contact_exists", content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
+  /api/v1/agent/contacts/{id}/invitation:
+    post:
+      tags: [agent-ui]
+      summary: (Re)send the customer invitation (valid 7 days) to a contact who has not accepted one
+      parameters: [{name: id, in: path, required: true, schema: {type: integer, format: int64}}]
+      responses:
+        "202":
+          description: Sent
+          content:
+            application/json:
+              schema: {type: object, properties: {expiresAt: {type: string, format: date-time}}}
+        "404": {$ref: "#/components/responses/NotFound"}
+        "409": {description: "already_active", content: {application/json: {schema: {$ref: "#/components/schemas/Error"}}}}
+  /api/v1/portal/account:
+    get:
+      tags: [portal]
+      summary: My account (own name, email and organisation only)
+      responses:
+        "200": {$ref: "#/components/responses/PortalAccount"}
+    patch:
+      tags: [portal]
+      summary: Change your own name
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: {type: string, maxLength: 200}
+      responses:
+        "200": {$ref: "#/components/responses/PortalAccount"}
+        "400": {$ref: "#/components/responses/Error"}
+components:
+  parameters:
+    TicketId: {name: id, in: path, required: true, schema: {type: integer, format: int64}}
+    AttachmentId: {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    QueueSearch: {name: q, in: query, description: "Subject or reporter email contains, or a reference/alias (max 200)", schema: {type: string, maxLength: 200}}
+    QueuePriority: {name: priority, in: query, schema: {$ref: "#/components/schemas/Priority"}}
+    QueueExcludeTriage: {name: excludeTriage, in: query, description: Leave out Email triage tickets, schema: {type: boolean, default: false}}
+    QueueSort: {name: sort, in: query, schema: {type: string, enum: [newest, oldest, updated, priority, first_response], default: newest}, description: "first_response: breached and unanswered first (longest overdue first), then running by first-response due time (soonest first), then paused, then the rest"}
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+    NotFound:
+      description: Not found, or not visible to the caller (indistinguishable)
+      content:
+        application/json:
+          schema: {$ref: "#/components/schemas/Error"}
+    Created:
+      description: Created
+      content:
+        application/json:
+          schema: {type: object, properties: {id: {type: integer, format: int64}, reference: {type: string}}}
+    IdCreated:
+      description: Created
+      content:
+        application/json:
+          schema: {type: object, properties: {id: {type: integer, format: int64}}}
+    PortalAccount:
+      description: The signed-in customer's own account
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              name: {type: string}
+              email: {type: string}
+              organisationName: {type: string}
+              microsoftSignInAvailable: {type: boolean, description: False until Microsoft sign-in is switched on}
+              microsoftLinked: {type: boolean}
+  schemas:
+    Error:
+      type: object
+      properties: {error: {type: string}, message: {type: string}}
+    Status: {type: string, enum: [NEW, OPEN, PENDING_ON_CLIENT, PENDING_ON_VENDOR, RESOLVED, CLOSED]}
+    Priority: {type: string, enum: [P1, P2, P3, P4]}
+    Impact: {type: string, enum: [JUST_ME, A_FEW_PEOPLE, WHOLE_OFFICE]}
+    Urgency: {type: string, enum: [NUISANCE, PARTLY, WORK_STOPPED]}
+    TicketTarget:
+      type: object
+      description: The other ticket, by id or by any of its references
+      properties:
+        ticketId: {type: integer, format: int64}
+        reference: {type: string}
+    RequestTypeOption:
+      type: object
+      properties:
+        id: {type: integer, format: int64}
+        name: {type: string}
+        defaultPriority: {$ref: "#/components/schemas/Priority"}
+    TicketSummary:
+      type: object
+      properties:
+        id: {type: integer, format: int64}
+        reference: {type: string}
+        organisationId: {type: [integer, "null"], format: int64}
+        subject: {type: string}
+        status: {$ref: "#/components/schemas/Status"}
+        priority: {$ref: "#/components/schemas/Priority"}
+        source: {type: string, enum: [PORTAL, EMAIL, API, AGENT]}
+        assigneeUserId: {type: [integer, "null"], format: int64}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        organisationName: {type: [string, "null"]}
+        assigneeName: {type: [string, "null"]}
+        reporterName: {type: [string, "null"]}
+        reporterEmail: {type: [string, "null"]}
+        requestTypeName: {type: [string, "null"]}
+        sla: {$ref: "#/components/schemas/Sla"}
+        closeReason: {type: [string, "null"], enum: [DUPLICATE, SPAM, RESOLVED_NO_FOLLOW_UP, CLIENT_CANCELLED, NO_RESPONSE, OTHER, AUTO_CLOSED_NO_REPLY, null], description: "Agent-only: the current close reason"}
+        closeNote: {type: [string, "null"], description: "Agent-only: the Other note"}
+        firstResponseTimer: {$ref: "#/components/schemas/FirstResponseTimer"}
+    FirstResponseTimer:
+      type: [object, "null"]
+      description: "Internal only (agent queue list, never the CSV export or a portal response): the queue's First response column, worked out by the server at asOf from the stored SLA values and the organisation's business hours. Null when the ticket has no SLA yet."
+      properties:
+        state: {type: string, enum: [RUNNING, STOPPED_OUTSIDE_HOURS, PAUSED, MET, BREACHED, NOT_APPLICABLE]}
+        remainingMinutes: {type: [integer, "null"], format: int64, description: "Business minutes left, rounded up (RUNNING, STOPPED_OUTSIDE_HOURS, PAUSED); null when unknown"}
+        breachedByMinutes: {type: [integer, "null"], format: int64, description: "Minutes over the target, rounded up (BREACHED)"}
+        dueAt: {type: [string, "null"], format: date-time}
+        businessDayMinutes: {type: integer, format: int64, description: "One day on the priority's clock (540 default business hours, 1440 for 24/7); 0 when unknown"}
+        asOf: {type: string, format: date-time}
+    Sla:
+      type: [object, "null"]
+      description: "Internal only (never in a portal response): SLA values stored on the ticket; null for triage or before the first calculation. Due times are null while paused or stopped."
+      properties:
+        clock: {type: string, enum: [TWENTY_FOUR_SEVEN, BUSINESS_HOURS]}
+        firstResponse: {$ref: "#/components/schemas/SlaTarget"}
+        resolution: {$ref: "#/components/schemas/SlaTarget"}
+        firstRespondedAt: {type: [string, "null"], format: date-time}
+        resolvedAt: {type: [string, "null"], format: date-time}
+        pausedMinutes: {type: integer}
+        warning: {type: string, enum: [NONE, AT_RISK, BREACHED]}
+        calculatedAt: {type: string, format: date-time}
+    SlaTarget:
+      type: object
+      properties:
+        targetMinutes: {type: integer}
+        usedMinutes: {type: integer}
+        dueAt: {type: [string, "null"], format: date-time}
+        state: {type: string, enum: [RUNNING, PAUSED, STOPPED, MET, BREACHED]}
+    SlaPanel:
+      type: [object, "null"]
+      description: "Internal only (never in a portal response): both targets calculated live at asOf by the same engine and inputs as the stored Sla values; null for triage tickets."
+      properties:
+        asOf: {type: string, format: date-time}
+        clock: {type: string, enum: [TWENTY_FOUR_SEVEN, BUSINESS_HOURS]}
+        timezone: {type: string, example: Europe/London}
+        priority: {type: string, enum: [P1, P2, P3, P4]}
+        policyLabel: {type: string, example: "P2 High - business hours (Europe/London)"}
+        pendingOnVendorPauses: {type: boolean}
+        businessDayMinutes: {type: integer, description: "One day on the priority clock (540 default business hours, 1440 for 24/7)"}
+        firstResponse: {$ref: "#/components/schemas/SlaPanelTarget"}
+        resolution: {$ref: "#/components/schemas/SlaPanelTarget"}
+    SlaPanelTarget:
+      type: object
+      properties:
+        state: {type: string, enum: [RUNNING, PAUSED, STOPPED_OUTSIDE_HOURS, MET, BREACHED, NOT_APPLICABLE]}
+        targetMinutes: {type: integer}
+        dueAt: {type: [string, "null"], format: date-time}
+        warnAt: {type: [string, "null"], format: date-time, description: "When 80% is or will be used"}
+        remainingBusinessMinutes: {type: [integer, "null"], description: "Rounded up; RUNNING, PAUSED and STOPPED_OUTSIDE_HOURS only"}
+        usedMinutes: {type: integer}
+        metAt: {type: [string, "null"], format: date-time}
+        breachedByMinutes: {type: [integer, "null"]}
+        nextClockStart: {type: [string, "null"], format: date-time, description: "STOPPED_OUTSIDE_HOURS: when business hours open again"}
+        clockStopsAt: {type: [string, "null"], format: date-time, description: "RUNNING on business hours: when the current window closes"}
+        pausedReason: {type: [string, "null"], enum: [CLIENT, VENDOR, null]}
+    SavedReply:
+      type: object
+      properties:
+        id: {type: integer, format: int64}
+        title: {type: string}
+        bodyHtml: {type: string, description: "Sanitised HTML with {placeholders}"}
+        shared: {type: boolean}
+    SavedReplyInput:
+      type: object
+      required: [title, bodyHtml]
+      properties:
+        title: {type: string, maxLength: 120}
+        bodyHtml: {type: string, maxLength: 20000}
+    Contact:
+      type: object
+      properties:
+        id: {type: integer, format: int64}
+        name: {type: string}
+        email: {type: string}
+        organisationId: {type: integer, format: int64}
+        organisationName: {type: string}
+        status: {type: string, enum: [ACTIVE, INVITED]}
+    Attachment:
+      type: object
+      properties:
+        id: {type: string, format: uuid}
+        filename: {type: string}
+        size: {type: integer, format: int64}
+        contentType: {type: string}
+        image: {type: boolean}
+        inline: {type: boolean}
+        internal: {type: boolean}
+    TicketDetail:
+      type: object
+      description: Agent read model. publicComments, internalNotes and systemEntries are separate lists.
+      properties:
+        id: {type: integer, format: int64}
+        reference: {type: string}
+        aliases: {type: array, items: {type: string}}
+        organisationId: {type: [integer, "null"], format: int64}
+        organisationName: {type: [string, "null"]}
+        subject: {type: string}
+        status: {$ref: "#/components/schemas/Status"}
+        statusLabel: {type: string}
+        closeReason: {type: [string, "null"], enum: [DUPLICATE, SPAM, RESOLVED_NO_FOLLOW_UP, CLIENT_CANCELLED, NO_RESPONSE, OTHER, AUTO_CLOSED_NO_REPLY, null], description: "Agent-only (never a portal response or an email): the reason of the current close; null when not closed or closed before close reasons existed"}
+        closeReasonLabel: {type: [string, "null"], description: "The reason as shown, e.g. Spam / junk"}
+        closeNote: {type: [string, "null"], description: "The note of an Other close"}
+        allowedStatuses: {type: array, items: {$ref: "#/components/schemas/Status"}}
+        priority: {$ref: "#/components/schemas/Priority"}
+        impact: {$ref: "#/components/schemas/Impact"}
+        urgency: {$ref: "#/components/schemas/Urgency"}
+        source: {type: string}
+        requestType: {$ref: "#/components/schemas/RequestTypeOption"}
+        reporter: {type: object}
+        assignee: {type: object}
+        duplicateOf: {type: object}
+        followUpOf: {type: object}
+        links: {type: array, items: {type: object}}
+        participants:
+          type: array
+          items:
+            type: object
+            properties:
+              userId: {type: integer, format: int64, nullable: true}
+              email: {type: string, nullable: true}
+              confirmed: {type: boolean}
+              name: {type: string, nullable: true, description: "a contact's current name"}
+        publicComments:
+          type: array
+          items:
+            type: object
+            properties:
+              id: {type: integer, format: int64}
+              authorKind: {type: string, enum: [SUPPORTER, CLIENT, API_KEY]}
+              bodyHtml: {type: string}
+              receivedByEmail: {type: boolean}
+              attachments: {type: array, items: {$ref: "#/components/schemas/Attachment"}}
+              attachmentsProcessing: {type: boolean, description: "An email's files are still being processed"}
+        internalNotes:
+          type: array
+          items:
+            type: object
+            properties:
+              id: {type: integer, format: int64}
+              authorKind: {type: string, enum: [SUPPORTER, SYSTEM]}
+              bodyHtml: {type: string}
+              attachments: {type: array, items: {$ref: "#/components/schemas/Attachment"}}
+              attachmentsProcessing: {type: boolean, description: "An email's files are still being processed"}
+        systemEntries: {type: array, items: {type: object}}
+        assignmentEntries:
+          type: array
+          description: >-
+            Every assignee change, oldest first, as a ready one-line text for the
+            timeline ("Reassigned from Sam Example to Alex Example by Jo Example"). Agent-only:
+            never in a portal response, an email or an export. Names are resolved when read; one
+            that cannot be resolved reads "a former agent". Reasons and
+            creation-time assignments are recorded from the start; older plain changes appear
+            without a reason.
+          items:
+            type: object
+            required: [id, text, createdAt]
+            properties:
+              id: {type: integer, format: int64}
+              fromUserId: {type: [integer, "null"], format: int64}
+              toUserId: {type: [integer, "null"], format: int64}
+              actorUserId: {type: [integer, "null"], format: int64, description: null for the system (auto-assignment)}
+              reason:
+                type: [string, "null"]
+                enum: [DEFAULT_REQUEST_TYPE, DEFAULT_ORGANISATION, DEACTIVATED, ORGANISATION_MOVED, null]
+              text: {type: string}
+              createdAt: {type: string, format: date-time}
+        timelineEntries:
+          type: array
+          description: >-
+            Every ticket change, oldest first, as a ready one-line text for the
+            timeline - status (manual, by client reply, auto-resolve, auto-close, monitoring alert),
+            priority, SLA recalculation, Pending reminder, request type, assignment (the same lines
+            as assignmentEntries), organisation set from triage or moved (with the reference
+            change), duplicate marked/merged, related link added/removed, follow-up created (on
+            both tickets), participant added/removed, reporter changed, and ticket creation.
+            Agent-only: never in a portal response, an email or an export. Names are resolved when
+            read through the viewer's own organisation access: an organisation, contact or ticket
+            the viewer may not see reads "another organisation", "a contact of another
+            organisation" or "another ticket"; a user who cannot be resolved reads "a former
+            agent". No backfill: actor kinds, status triggers and the new change types start when the
+            timeline was introduced; older rows show in the plain form.
+          items:
+            type: object
+            required: [id, type, actorKind, text, createdAt]
+            properties:
+              id: {type: integer, format: int64}
+              type:
+                type: string
+                description: the stored history type (CREATED, STATUS, PRIORITY, REQUEST_TYPE, ASSIGNEE, ORGANISATION, LINKED, LINK_REMOVED, DUPLICATE_OF, DUPLICATE_ADDED, FOLLOW_UP_OF, FOLLOW_UP_ADDED, PARTICIPANTS_RECHECKED, PARTICIPANT_ADDED, PARTICIPANT_REMOVED, REPORTER, SLA_DUE_CHANGED, CLIENT_REMINDER_SENT, CLIENT_EMAIL_SKIPPED, SLA_AUTOMATION; new values may be added)
+              actorKind:
+                type: string
+                enum: [AGENT, CLIENT, SYSTEM, API_KEY]
+                description: who made the change (CLIENT = by email reply or in the portal; SYSTEM = a job, auto-assignment or an SLA automation rule; API_KEY = a monitoring alert)
+              actorUserId: {type: [integer, "null"], format: int64, description: the agent or client user, null for the system, an API key or an email reply}
+              text: {type: string}
+              createdAt: {type: string, format: date-time}
+        history:
+          type: array
+          deprecated: true
+          description: >-
+            The raw ticket history rows (ids, not names). Deprecated: use timelineEntries,
+            which carries every row as readable text. The agent UI no longer shows it.
+          items: {type: object}
+        createdAt: {type: string, format: date-time}
+        updatedAt: {type: string, format: date-time}
+        sla: {$ref: "#/components/schemas/Sla"}
+        slaPanel: {$ref: "#/components/schemas/SlaPanel"}

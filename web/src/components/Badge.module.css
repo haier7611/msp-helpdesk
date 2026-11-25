@@ -1,0 +1,51 @@
+.badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.p1 {
+  background: var(--color-p1-bg);
+  color: var(--color-p1-text);
+}
+
+.p2 {
+  background: var(--color-p2-bg);
+  color: var(--color-p2-text);
+}
+
+.p3,
+.brand {
+  background: var(--color-p3-bg);
+  color: var(--color-p3-text);
+}
+
+.p4,
+.neutral {
+  background: var(--color-p4-bg);
+  color: var(--color-p4-text);
+}
+
+.breached {
+  background: var(--color-sla-breached-bg);
+  color: var(--color-sla-breached-text);
+}
+
+.risk {
+  background: var(--color-sla-risk-bg);
+  color: var(--color-sla-risk-text);
+}
+
+.ok {
+  background: var(--color-sla-ok-bg);
+  color: var(--color-sla-ok-text);
+}
+
+.paused {
+  background: var(--color-sla-paused-bg);
+  color: var(--color-sla-paused-text);
+}

@@ -1,0 +1,153 @@
+openapi: 3.1.0
+info:
+  title: Ticket System - two-step sign-in changes
+  version: 0.1.0
+  description: |
+    "Trust this device" after a recovery code,
+    password step-up for an exempt engineer, and the admin endpoints of the time-limited two-step
+    exemption. Session cookie plus the X-XSRF-TOKEN header on every PUT, POST and DELETE. Codes and
+    passwords travel only in request bodies. Errors are `{"error": code, "message": text}`.
+    Endpoints marked "step-up" answer 403 `step_up_required` unless the session stepped up in the
+    last 10 minutes. The exemption endpoints are checked against the registered endpoints by
+    TwoStepOpenApiCoverageIntegrationTest.
+servers:
+  - url: /
+tags:
+  - name: auth-two-step
+  - name: admin-supporters-security
+paths:
+  /api/v1/auth/me:
+    get:
+      tags: [auth-two-step]
+      summary: The signed-in user; mfaExemptUntil is set only for an engineer whose exemption applies now
+      responses:
+        "200":
+          description: The user
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Me"}
+        "401": {description: Not signed in}
+  /api/v1/auth/mfa/recovery:
+    post:
+      tags: [auth-two-step]
+      summary: Sign-in step with a recovery code (used up); trustDevice trusts this browser for 30 days
+      description: |
+        Session level MFA_REQUIRED only. With `trustDevice: true` the response sets the
+        `__Host-TS_TRUST` cookie (HttpOnly, Secure, SameSite=Lax, Max-Age 2592000 = 30 days) and the
+        device record is trusted for the same 30 days, exactly as after `mfa/verify`. A trusted
+        device skips the sign-in code only, never step-up.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recoveryCode]
+              properties:
+                recoveryCode: {type: string, maxLength: 40}
+                trustDevice: {type: boolean, default: false}
+      responses:
+        "200":
+          description: Fully signed in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  me: {$ref: "#/components/schemas/Me"}
+                  recoveryCodesLeft: {type: integer}
+        "400": {description: "`invalid_code`"}
+        "429": {description: Slowed down after failed attempts}
+  /api/v1/auth/step-up:
+    post:
+      tags: [auth-two-step]
+      summary: Step-up with a TOTP code, a recovery code, or (exempt engineers only) the password
+      description: |
+        Send exactly one of `code`, `recoveryCode` or `password`. `password` is accepted only from
+        an engineer whose two-step exemption applies now; anyone else gets 403
+        `password_step_up_not_allowed`. A wrong password answers 400 `invalid_code` and counts in
+        the same back-off as wrong codes.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code: {type: string, maxLength: 20}
+                recoveryCode: {type: string, maxLength: 40}
+                password: {type: string, maxLength: 1024}
+      responses:
+        "200":
+          description: Stepped up for 10 minutes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  recoveryCodesLeft: {type: [integer, "null"]}
+        "400": {description: "`invalid_code`"}
+        "403": {description: "`password_step_up_not_allowed` or `mfa_not_enrolled`"}
+        "429": {description: Slowed down after failed attempts}
+  /api/v1/admin/supporters/{id}/security/mfa-exemption:
+    parameters:
+      - {name: id, in: path, required: true, schema: {type: integer, format: int64}}
+    put:
+      tags: [admin-supporters-security]
+      summary: Exempt an engineer from two-step sign-in until endsAt, or replace their exemption (step-up)
+      description: |
+        Admins only. The target must be an active supporter with role AGENT: an admin answers 409
+        `exemption_not_allowed`, an inactive account 409 `not_active`, yourself 400 `own_account`,
+        anyone else 404. `reason` is required (1-200 characters, one line) and is shown to admins
+        only - it is never written to the audit log or the email. `endsAt` must be later than now
+        and at most 30 days from now (the web form offers 7 days by default). Audited as
+        `MFA_EXEMPTION_GRANTED`; the engineer gets a security notice email with the end date.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason, endsAt]
+              properties:
+                reason: {type: string, minLength: 1, maxLength: 200}
+                endsAt: {type: string, format: date-time}
+      responses:
+        "200":
+          description: The exemption
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Exemption"}
+        "400": {description: "`invalid_request` (reason or end date) or `own_account`"}
+        "403": {description: "Not an admin, or `step_up_required`"}
+        "404": {description: No such supporter}
+        "409": {description: "`exemption_not_allowed` or `not_active`"}
+    delete:
+      tags: [admin-supporters-security]
+      summary: End the engineer's exemption now; every session of theirs ends (step-up)
+      description: |
+        Audited as `MFA_EXEMPTION_REVOKED` (`ended_by` = `admin`). security_version is bumped, so
+        every session of the engineer ends at once and the next sign-in asks for two-step (set-up
+        first if they never set it up). Trusted devices stay.
+      responses:
+        "204": {description: Ended}
+        "400": {description: "`own_account`"}
+        "403": {description: "Not an admin, or `step_up_required`"}
+        "404": {description: "No such supporter, or `not_exempt`"}
+components:
+  schemas:
+    Me:
+      type: object
+      properties:
+        id: {type: integer, format: int64}
+        email: {type: string}
+        name: {type: string}
+        role: {type: string, enum: [CUSTOMER, AGENT, ADMIN]}
+        authLevel: {type: [string, "null"], enum: [MFA_ENROLMENT_REQUIRED, MFA_REQUIRED, FULL, null]}
+        mfaExemptUntil: {type: [string, "null"], format: date-time}
+    Exemption:
+      type: object
+      properties:
+        reason: {type: string}
+        endsAt: {type: string, format: date-time}
+        grantedAt: {type: string, format: date-time}

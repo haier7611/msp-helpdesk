@@ -1,0 +1,40 @@
+/* Tabs wrap onto a second line in a narrow box (e.g. the agent side panel) instead of being cut
+   off behind a sideways scroll (which showed labels like "Activ"). */
+.list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tab {
+  min-height: var(--control-size);
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.selected {
+  border-bottom-color: var(--color-brand);
+  color: var(--color-brand-strong-text);
+  font-weight: 600;
+}
+
+.filled {
+  gap: 0;
+}
+
+.filled .tab {
+  flex: 1;
+  min-height: var(--control-size);
+  background: var(--color-surface);
+}
+
+.filled .selected {
+  background: var(--color-brand-tint);
+}

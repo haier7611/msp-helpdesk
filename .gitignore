@@ -1,0 +1,33 @@
+# Secrets - never commit. Only the .env templates are tracked.
+.env
+.env.*
+!.env.example
+
+# api
+api/build/
+api/.gradle/
+api/bin/
+api/out/
+.idea/
+*.iml
+
+# web
+web/node_modules/
+web/dist/
+web/coverage/
+*.tsbuildinfo
+
+# local data from docker compose runs
+data/
+backups/
+
+.DS_Store
+
+# Agent worktrees (local only)
+.claude/
+
+# Local runs (scripts/dev-up.sh)
+!.env.local.example
+demo-credentials.txt
+.demo-credentials.*
+.demo-seed-log.*

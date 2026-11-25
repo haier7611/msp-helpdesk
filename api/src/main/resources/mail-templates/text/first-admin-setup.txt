@@ -1,0 +1,10 @@
+Hello [(${recipientName})],
+
+Setup is complete: you are the first administrator of [(${supportName})].
+
+Next steps: set up two-step sign-in, then invite your agents from Admin - Agents.
+
+Sign in here:
+[(${signInLink})]
+
+If you did not set up this account, contact your IT team straight away.
