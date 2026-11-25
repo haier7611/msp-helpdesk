@@ -45,7 +45,7 @@ dependencies {
   implementation("org.eclipse.angus:angus-mail")
   implementation("org.thymeleaf:thymeleaf")
   // Inbound mail HTML sanitising (WP-07a, spec section 9 / ADR-009 C5). Not managed by Boot.
-  implementation("com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20261031.1")
+  implementation("com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20261110.1")
   // Attachments (WP-04, ADR-009 C6): content-based type detection (tika-core only, no parsers) and
   // ImageIO plugins to decode WebP and robust JPEG (CMYK, odd headers) before re-encoding.
   implementation("org.apache.tika:tika-core:4.2.0")
