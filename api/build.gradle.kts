@@ -1,8 +1,8 @@
 plugins {
   java
-  id("org.springframework.boot") version "4.1.2"
+  id("org.springframework.boot") version "4.2.0"
   id("io.spring.dependency-management") version "1.1.7"
-  id("com.diffplug.spotless") version "8.11.0"
+  id("com.diffplug.spotless") version "8.12.0"
 }
 
 group = "com.ticketsystem"
@@ -32,11 +32,11 @@ dependencies {
   implementation("org.springframework.boot:spring-boot-starter-security")
   implementation("org.springframework.boot:spring-boot-starter-session-jdbc")
   implementation("org.springframework.boot:spring-boot-starter-validation")
-  implementation("org.bouncycastle:bcprov-jdk18on:1.86")
+  implementation("org.bouncycastle:bcprov-jdk18on:1.87")
   implementation("com.bucket4j:bucket4j_jdk17-core:8.22.0")
   // WP-02c: QR code for TOTP enrolment, drawn as SVG path data (ZXing core only, no AWT). TOTP
   // itself is plain JDK code (auth/mfa/Totp.java).
-  implementation("com.google.zxing:core:3.5.3")
+  implementation("com.google.zxing:core:3.5.4")
   // Outbound mail (WP-02a): Spring's JavaMailSender over Angus Mail, and plain Thymeleaf (no
   // Spring MVC view integration) for the system email templates.
   implementation("org.springframework.boot:spring-boot-starter-mail")
@@ -81,7 +81,7 @@ dependencies {
   }
   // Architecture rules (WP-03, C13): every repository method on client-owned data takes an
   // AccessScope; only the reference module builds ticket references.
-  testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
+  testImplementation("com.tngtech.archunit:archunit-junit5:1.5.1")
   testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
