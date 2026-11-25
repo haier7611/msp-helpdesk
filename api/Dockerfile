@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # Multi-stage build: compile with the JDK, run on the JRE as a non-root user.
 # Tests are not run here - CI runs them (scripts/ci/api.sh); this stage only packages the jar.
-FROM eclipse-temurin:21.0.13_9-jdk@sha256:db5cc6341a1d7bc40cdb51e1f0d9824f3bb2cc8107d29da421dc4df7d11f05f1 AS build
+FROM eclipse-temurin:24.0.2_12-jdk@sha256:7493205ffe6caa8074fa8a06a276bb1c5ac41d3dd0fd43a0db66d7f776e80b3e AS build
 WORKDIR /src
 COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
 COPY gradle ./gradle
@@ -10,7 +10,7 @@ COPY src ./src
 RUN ./gradlew --no-daemon -q bootJar -x test \
  && cp build/libs/*.jar /src/app.jar
 
-FROM eclipse-temurin:21.0.13_9-jre@sha256:ca73b4d3961703d6d7830a4361f49ef0478f8f28b39defc07bb72f4cc7f834f6 AS runtime
+FROM eclipse-temurin:24.0.2_12-jre@sha256:8cb2387a28af84cf0db0948d9c67d4480192f4e567027a3963f145d218e8b4f2 AS runtime
 ARG GIT_SHA=unknown
 ENV APP_GIT_SHA=${GIT_SHA} \
     ATTACHMENTS_DIR=/data/attachments \
